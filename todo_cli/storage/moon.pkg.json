@@ -1,0 +1,6 @@
+{
+  "import": [
+    "moonbitlang/x/fs",
+    "username/todo_cli/todo"
+  ]
+}
