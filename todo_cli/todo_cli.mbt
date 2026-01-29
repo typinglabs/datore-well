@@ -8,24 +8,16 @@ fn add_cmd(todo : String) -> Unit {
     println("todo text is required")
     return
   }
-  let todos = load(data_path)
-  let next_id = {
-    let mut max_id = 0
-    for t in todos {
-      if t.id >= max_id {
-        max_id = t.id
-      }
-    }
-    max_id + 1
-  }
-  todos.push({ id: next_id, done: false, text: text.to_string() })
-  save(data_path, todos)
+  let todos = @persistence.load(data_path)
+  let next_id = @todo.next_id(todos)
+  todos.push(@todo.make(next_id, false, text.to_string()))
+  @persistence.save(data_path, todos)
   println("added \{next_id}")
 }
 
 ///|
 fn list_cmd() -> Unit {
-  let todos = load(data_path)
+  let todos = @persistence.load(data_path)
   if todos.length() == 0 {
     println("no todos")
     return
@@ -39,7 +31,7 @@ fn list_cmd() -> Unit {
 ///|
 fn done_cmd(todo_id : String) -> Bool {
   let todo_id = @strconv.parse_int(todo_id) catch { _ => return false }
-  let todos = load(data_path)
+  let todos = @persistence.load(data_path)
   let index = todos.search_by(todo => todo.id == todo_id)
   match index {
     None => {
@@ -47,8 +39,8 @@ fn done_cmd(todo_id : String) -> Bool {
       false
     }
     Some(index) => {
-      todos[index] = { ..todos[index], done: !todos[index].done }
-      save(data_path, todos)
+      todos[index] = @todo.toggle_done(todos[index])
+      @persistence.save(data_path, todos)
       true
     }
   }
@@ -57,13 +49,13 @@ fn done_cmd(todo_id : String) -> Bool {
 ///|
 fn delete_cmd(todo_id : String) -> Bool {
   let todo_id = @strconv.parse_int(todo_id) catch { _ => return false }
-  let todos = load(data_path)
+  let todos = @persistence.load(data_path)
   let new_todos = todos.filter(todo => todo.id != todo_id)
   if new_todos.length() == todos.length() {
     println("todo not found: \{todo_id}")
     return false
   }
-  save(data_path, new_todos)
+  @persistence.save(data_path, new_todos)
   true
 }
 
