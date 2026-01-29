@@ -35,14 +35,14 @@ fn load_from_string(content : String) -> Array[Todo] {
 }
 
 ///|
-pub fn load(path : String) -> Array[Todo] {
+fn load(path : String) -> Array[Todo] {
   // TODO: エラーハンドリング
-  let content = @fs.read_file_to_string(path) catch { _ => [] }
+  let content = @fs.read_file_to_string(path) catch { _ => return [] }
   load_from_string(content)
 }
 
 ///|
-pub fn save(path : String, todos : Array[Todo]) -> Unit {
+fn save(path : String, todos : Array[Todo]) -> Unit {
   // TODO: エラーハンドリング
   let content = todos.map(todo => to_line(todo)).join("\n")
   @fs.write_string_to_file(path, content) catch {
@@ -52,7 +52,6 @@ pub fn save(path : String, todos : Array[Todo]) -> Unit {
 
 ///|
 test "parse_line" {
-  assert_eq(1 + 1, 2)
   let task_line : String = "1|0|ごはんを食べる"
   let task : Todo = { id: 1, done: false, text: "ごはんを食べる" }
   assert_eq(parse_line(task_line), Some(task))

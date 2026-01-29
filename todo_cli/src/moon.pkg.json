@@ -1,3 +1,8 @@
 {
-  "import": ["moonbitlang/core/strconv", "moonbitlang/x/fs"]
+  "is-main": true,
+  "import": [
+    "moonbitlang/core/strconv",
+    "moonbitlang/x/fs",
+    "moonbitlang/x/sys"
+  ]
 }
