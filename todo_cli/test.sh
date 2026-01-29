@@ -2,9 +2,9 @@
 
 set -eux
 
-moon run src add "buy milk"
-moon run src list
-moon run src done 1
-moon run src list
-moon run src delete 1
-moon run src list
+moon run . add "buy milk"
+moon run . list
+moon run . done 1
+moon run . list
+moon run . delete 1
+moon run . list

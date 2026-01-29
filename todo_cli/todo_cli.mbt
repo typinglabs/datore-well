@@ -1,23 +1,23 @@
 ///|
-let data_path = "data/todo.txt"
+type Storage = @storage.Storage
 
 ///|
-fn add_cmd(todo : String) -> Unit {
+fn add_cmd(storage : Storage, todo : String) -> Unit {
   let text = todo.trim()
   if text == "" {
     println("todo text is required")
     return
   }
-  let todos = @persistence.load(data_path)
+  let todos : Array[@todo.Todo] = (storage.load)()
   let next_id = @todo.next_id(todos)
   todos.push(@todo.make(next_id, false, text.to_string()))
-  @persistence.save(data_path, todos)
+  (storage.save)(todos)
   println("added \{next_id}")
 }
 
 ///|
-fn list_cmd() -> Unit {
-  let todos = @persistence.load(data_path)
+fn list_cmd(storage : Storage) -> Unit {
+  let todos : Array[@todo.Todo] = (storage.load)()
   if todos.length() == 0 {
     println("no todos")
     return
@@ -29,9 +29,9 @@ fn list_cmd() -> Unit {
 }
 
 ///|
-fn done_cmd(todo_id : String) -> Bool {
+fn done_cmd(storage : Storage, todo_id : String) -> Bool {
   let todo_id = @strconv.parse_int(todo_id) catch { _ => return false }
-  let todos = @persistence.load(data_path)
+  let todos : Array[@todo.Todo] = (storage.load)()
   let index = todos.search_by(todo => todo.id == todo_id)
   match index {
     None => {
@@ -40,22 +40,22 @@ fn done_cmd(todo_id : String) -> Bool {
     }
     Some(index) => {
       todos[index] = @todo.toggle_done(todos[index])
-      @persistence.save(data_path, todos)
+      (storage.save)(todos)
       true
     }
   }
 }
 
 ///|
-fn delete_cmd(todo_id : String) -> Bool {
+fn delete_cmd(storage : Storage, todo_id : String) -> Bool {
   let todo_id = @strconv.parse_int(todo_id) catch { _ => return false }
-  let todos = @persistence.load(data_path)
+  let todos : Array[@todo.Todo] = (storage.load)()
   let new_todos = todos.filter(todo => todo.id != todo_id)
   if new_todos.length() == todos.length() {
     println("todo not found: \{todo_id}")
     return false
   }
-  @persistence.save(data_path, new_todos)
+  (storage.save)(new_todos)
   true
 }
 
@@ -69,7 +69,7 @@ fn usage() -> Unit {
 }
 
 ///|
-fn handle_args(args : Array[String]) -> Int {
+fn handle_args(args : Array[String], storage : Storage) -> Int {
   if args.length() < 2 {
     usage()
     return 1
@@ -80,11 +80,11 @@ fn handle_args(args : Array[String]) -> Int {
         usage()
         return 1
       }
-      add_cmd(args[2])
+      add_cmd(storage, args[2])
       0
     }
     "list" => {
-      list_cmd()
+      list_cmd(storage)
       0
     }
     "done" => {
@@ -92,7 +92,7 @@ fn handle_args(args : Array[String]) -> Int {
         usage()
         return 1
       }
-      if done_cmd(args[2]) {
+      if done_cmd(storage, args[2]) {
         0
       } else {
         1
@@ -103,7 +103,7 @@ fn handle_args(args : Array[String]) -> Int {
         usage()
         return 1
       }
-      if delete_cmd(args[2]) {
+      if delete_cmd(storage, args[2]) {
         0
       } else {
         1
@@ -118,46 +118,89 @@ fn handle_args(args : Array[String]) -> Int {
 
 ///|
 test "handle_args / add / ok" {
-  assert_eq(handle_args(["/path", "add", "\"add milk\""]), 0)
+  let path = @storage.make_tmp_path()
+  let storage = @storage.make_storage(path)
+  assert_eq(handle_args(["/path", "add", "add milk"], storage), 0)
+  @fs.remove_file(path) catch {
+    _ => ()
+  }
 }
 
 ///|
 test "handle_args / add / error_if_task_name_is_missing" {
-  assert_eq(handle_args(["/path", "add"]), 1)
+  let path = @storage.make_tmp_path()
+  let storage = @storage.make_storage(path)
+  assert_eq(handle_args(["/path", "add"], storage), 1)
+  @fs.remove_file(path) catch {
+    _ => ()
+  }
 }
 
 ///|
 test "handle_args / list / ok" {
-  let code = handle_args(["/path", "list"])
+  let path = @storage.make_tmp_path()
+  let storage = @storage.make_storage(path)
+  let code = handle_args(["/path", "list"], storage)
   assert_eq(code, 0)
+  //
+  @fs.remove_file(path) catch {
+    _ => ()
+  }
 }
 
 ///|
 test "handle_args / done / ok" {
-  let code = handle_args(["/path", "done", "1"])
+  let path = @storage.make_tmp_path()
+  let seed = @todo.load_from_string("1|0|task")
+  let storage = @storage.make_storage(path)
+  (storage.save)(seed)
+  let code = handle_args(["/path", "done", "1"], storage)
   assert_eq(code, 0)
+  @fs.remove_file(path) catch {
+    _ => ()
+  }
 }
 
 ///|
 test "handle_args / done / error_if_id_is_invalid" {
-  let code = handle_args(["/path", "done", "2"])
+  let path = @storage.make_tmp_path()
+  let seed = @todo.load_from_string("1|0|task")
+  let storage = @storage.make_storage(path)
+  (storage.save)(seed)
+  let code = handle_args(["/path", "done", "2"], storage)
   assert_eq(code, 1)
+  @fs.remove_file(path) catch {
+    _ => ()
+  }
 }
 
 ///|
 test "handle_args / delete / ok" {
-  let code = handle_args(["/path", "delete", "1"])
+  let path = @storage.make_tmp_path()
+  let seed = @todo.load_from_string("1|0|task")
+  let storage = @storage.make_storage(path)
+  (storage.save)(seed)
+  let code = handle_args(["/path", "delete", "1"], storage)
   assert_eq(code, 0)
+  @fs.remove_file(path) catch {
+    _ => ()
+  }
 }
 
 ///|
 test "handle_args / delete / error_if_id_is_invalid" {
-  let code = handle_args(["/path", "delete", "1"])
+  let path = @storage.make_tmp_path()
+  let storage = @storage.make_storage(path)
+  let code = handle_args(["/path", "delete", "1"], storage)
   assert_eq(code, 1)
+  @fs.remove_file(path) catch {
+    _ => ()
+  }
 }
 
 ///|
 fn main {
   let args = @sys.get_cli_args()
-  @sys.exit(handle_args(args))
+  let data_path = "data/todo.txt"
+  @sys.exit(handle_args(args, @storage.make_storage(data_path)))
 }
