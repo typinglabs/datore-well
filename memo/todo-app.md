@@ -40,6 +40,10 @@
 - エラーハンドリングとか、それをユーザー側に伝えるための方法を知らなすぎて、実装イメージが湧いていないのがよくない
 - 別のスコープで、同じ名前の変数を宣言して上書きできるやつ、なんて言うんだっけ
 - 同じパッケージ内の別ファイルの関数を使えるやつ、ES Modulesの感覚だとグチャグチャになりそうな印象があるけど大丈夫だろうか？そのファイルだけで使用するプライベートな関数って定義できないのかな。
+- テストをグルーピングするにはどうすればいいか。
+- ブラックボックステストとは何か。
+- テストは同一ファイルに書いているが、関数→テスト→関数→テストと近くに書くのと、一番下に書くのとどちらが良いか。
+- テストを実行した時に、テストケース名を表示するオプションはあるか。`--verbose`は長すぎるので。
 
 ## タスク
 
@@ -102,18 +106,18 @@ todo-cli/
 
 - [x] args を読む
 - [x] add: text を結合して1件追加
-- [ ] list: 一覧表示（[x] / [ ]）
-- [ ] done: id指定で完了
-- [ ]  delete: id指定で削除
-- [ ] エラー時は使い方を表示
+- [x] list: 一覧表示（[x] / [ ]）
+- [x] done: id指定で完了
+- [x]  delete: id指定で削除
+- [x] エラー時は使い方を表示
 
 ———
 
 ## ステップ5: テストを書く (tests/todo_test.mbt)
 
-- parseLine が正しく分解できる
-- toLine が同じ形式に戻せる
-- done 処理が正しく反映される
+- [x] parseLine が正しく分解できる
+- [x] toLine が同じ形式に戻せる
+- [x] done 処理が正しく反映される
 
 ———
 
@@ -121,11 +125,14 @@ todo-cli/
 
 moon fmt
 moon test
-moon run -- add "buy milk"
-moon run -- list
-moon run -- done 1
+moon run src add "buy milk"
+moon run src list
+moon run src done 1
+moon run src list
+moon run src delete 1
+moon run src list
 
-※ moon run の仕様が違う場合は moon help を確認。
+→シェルスクリプトにしました。
 
 ———
 

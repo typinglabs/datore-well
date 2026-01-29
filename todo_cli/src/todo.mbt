@@ -6,6 +6,28 @@ struct Todo {
 } derive(Show, Eq)
 
 ///|
+test "parse_line / ok" {
+  let task_line : String = "1|0|ごはんを食べる"
+  let task : Todo = { id: 1, done: false, text: "ごはんを食べる" }
+  assert_eq(parse_line(task_line), Some(task))
+}
+
+///|
+test "parse_line / invalid_field_count" {
+  assert_eq(parse_line("1|0"), None)
+}
+
+///|
+test "parse_line / invalid_id" {
+  assert_eq(parse_line("x|0|task"), None)
+}
+
+///|
+test "parse_line / invalid_done" {
+  assert_eq(parse_line("1|9|task"), None)
+}
+
+///|
 fn parse_line(line : StringView) -> Todo? {
   let parts = line.split("|").collect()
   if parts.length() != 3 {
@@ -22,9 +44,29 @@ fn parse_line(line : StringView) -> Todo? {
 }
 
 ///|
+test "to_line / ok" {
+  let todo : Todo = { id: 1, done: false, text: "散歩する" }
+  assert_eq(to_line(todo), "1|0|散歩する")
+}
+
+///|
 fn to_line(todo : Todo) -> String {
   let done = if todo.done { "1" } else { "0" }
   "\{todo.id}|\{done}|\{todo.text}"
+}
+
+///|
+test "load_from_string / ok" {
+  let content = ["1|0|a", "2|0|b"].join("\n")
+  let todos = load_from_string(content)
+  assert_eq(todos.length(), 2)
+}
+
+///|
+test "load_from_string / skip_empty_line" {
+  let content = ["1|0|a", "", "2|0|b", ""].join("\n")
+  let todos = load_from_string(content)
+  assert_eq(todos.length(), 2)
 }
 
 ///|
@@ -48,17 +90,4 @@ fn save(path : String, todos : Array[Todo]) -> Unit {
   @fs.write_string_to_file(path, content) catch {
     _ => ()
   }
-}
-
-///|
-test "parse_line" {
-  let task_line : String = "1|0|ごはんを食べる"
-  let task : Todo = { id: 1, done: false, text: "ごはんを食べる" }
-  assert_eq(parse_line(task_line), Some(task))
-}
-
-///|
-test "to_line" {
-  let todo : Todo = { id: 1, done: false, text: "散歩する" }
-  assert_eq(to_line(todo), "1|0|散歩する")
 }
