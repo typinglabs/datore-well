@@ -82,5 +82,26 @@
 - UIフレームワークはRabbit-TEAを採用する。
 - Rabbit-TEAの構成に合わせて画面と状態管理を設計する。
 
+## Rabbit-TEAの流れ整理
+- Model: 画面状態（タイトル/ゲーム/結果）と入力中の文字列、タイマー、統計値を保持する。
+- Msg: キー入力・開始/終了・タイマー進行・画面遷移などのイベント種別を表す。
+- Update: Msgに応じてModelを更新し、必要に応じてCmdを返す。
+- View: ModelをHTMLに変換し、操作イベントをMsgに結び付ける。
+
+### 入力イベントの基本フロー
+1. キー入力を受ける
+2. Msg（例: KeyPressed）を生成
+3. Updateで入力判定・状態更新
+4. Model更新後にView再描画
+
+### Cmdの使いどころ
+- タイマーの開始/停止、一定間隔の更新
+- 将来的なデータ読み込みや保存などの副作用
+
+### 画面遷移の考え方（案）
+- Modelに画面状態（Title/Game/Result）を持たせる
+- Msgで遷移イベント（Start/Finish/Retry/Back）を受ける
+- Updateで画面状態を切り替える
+
 ## デプロイ
 - Cloudflare Workersにデプロイする。

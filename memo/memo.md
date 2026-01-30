@@ -69,3 +69,21 @@ Rabbit-TEAと、luna.mbtを使ってみることにする。
 ### Rabbit-TEA
 
 [Rabbit-TEA メモ](./rabbit-tea.md)
+
+環境構築は[rabbit-tea-template/package.json at main · moonbit-community/rabbit-tea-template](https://github.com/moonbit-community/rabbit-tea-template)を参考にする。
+
+- `moon.mod.json`を書く
+- `bun add -D @tailwindcss/vite rabbit-tea-vite`
+- `src/index.html`と`src/style.css`を書く
+- `moon add Yoorkin/rabbit-tea`
+- `src/main/moon.pkg.json`に`Yoorkin/rabbit-tea`をインポート
+- `src/main/main.mbt`を書く
+  - めっちゃコンパイルエラー出る。先に`vite`の設定した方がいい？
+- `vite.config.js`を書いて、`vite`で開発サーバーを立ち上げて確認
+- `vite build`でビルドできることを確認する
+
+![alt text](image.png)
+
+これなんで起きてるんだろう。`moon.pkg.json`は書いてるんだけどね。ビルドはできてるから、LSPの問題な気がする。
+
+`preferred-target`をtypoしていたのが原因だった。moonbitのパッケージとビルド削除してから、`vite dev`してエディタ開き直すと直った。

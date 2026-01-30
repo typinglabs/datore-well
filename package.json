@@ -1,6 +1,6 @@
 {
-  "name": "sample_webapp",
   "type": "module",
+  "dependencies": {},
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.18",
     "rabbit-tea-vite": "^1.0.0"

@@ -21,6 +21,27 @@ rabbit-TEAのインストール周りで苦戦している。`moon add`で追加
 
 aliases.mbtが必要だったらしい。ここは理解していないのでまた今度。とりあえずカウンターが動いたのでここまでとしよう。
 
+## ビルド時のエラー対応（メモ）
+
+### 症状
+
+`bun run build` で以下のエラーが出る。
+
+```
+Error: ENOENT: no such file or directory, lstat 'target/js/release/build/main/main.js.map'
+```
+
+### 原因
+
+rabbit-tea-vite が `moon build --release` 実行後に `main.js.map` を無条件でコピーしようとしており、`main.js.map` が生成されない環境だと失敗する。
+
+### 暫定対処
+
+`rabbit-tea-vite` の `runMoonbitBuild` 内で `main.js.map` の存在確認を行い、無い場合はコピーをスキップする。
+
+- `sample_webapp/node_modules/rabbit-tea-vite/dist/index.js`
+- `sample_webapp/node_modules/rabbit-tea-vite/src/index.ts`
+
 ## ドキュメントを読む
 
 - [Introduce The Elm Architecture to MoonBit: build robust web app with simple principles | MoonBit](https://www.moonbitlang.com/blog/rabbit-tea)
