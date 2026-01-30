@@ -15,82 +15,11 @@ Vite、TailwindCSSのテンプレートがあるので、それを真似すれ�
 
 テンプレートをもとにプロジェクトを作れるかもしれないが、それほど量も多くないので、理解のため1つずつファイルを作ってみる。
 
-moon.mod.json
-
-```json
-{
-  "name": "username/sample_webapp",
-  "version": "0.0.1",
-  "deps": {},
-  "source": "src",
-  "preferred-target": "js"
-}
-
-```
-
-rabbit-teaのViteプラグインや、TailwindCSSが必要なので、bunでインストールする。
-
-```bash
-bun add -D @tailwindcss/vite rabbit-tea-vite
-```
-
-package.jsonの`scripts`を追加。
-
-```json
-{
-  "name": "sample_webapp",
-  "type": "module",
-  "devDependencies": {
-    "@tailwindcss/vite": "^4.1.18",
-    "rabbit-tea-vite": "^1.0.0"
-  },
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build"
-  }
-}
-```
-
-vite.config.jsと、最小限のhtmlを書く。
-
-vite.config.js
-
-```js
-import { defineConfig } from "vite";
-import rabbitTEA from "rabbit-tea-vite";
-import tailwindcss from "@tailwindcss/vite";
-
-export default defineConfig({
-  root: "src",
-  plugins: [rabbitTEA(), tailwindcss()],
-});
-```
-
-index.html
-
-```html
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sample Web App</title>
-  </head>
-  <body>
-    <div id="app"></div>
-  </body>
-</html>
-```
-
-
-
-サーバーを起動できればOK。
-
-```bash
-bun run dev
-```
-
 ディレクトリは浅い方が好きなので`src/`ディレクトリはなくてもいいのだが、後で問題が起きるかもしれないのでとりあえず真似しておく。
+
+rabbit-TEAのインストール周りで苦戦している。`moon add`で追加して、`moon.pkg.json`に追加したものの、存在しない扱いされている。
+
+aliases.mbtが必要だったらしい。ここは理解していないのでまた今度。とりあえずカウンターが動いたのでここまでとしよう。
 
 ## ドキュメントを読む
 
