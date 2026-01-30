@@ -64,6 +64,8 @@ Rabbit-TEAと、luna.mbtを使ってみることにする。
 
 →Moonbitのレジストリ（mooncakes.io）がRabbit-TEAで書かれているとのことだったので、それを参考にRabbit-TEAを使って見ることにします。
 
+[moonbitlang/mooncakes.io: website of mooncakes.io, written in MoonBit](https://github.com/moonbitlang/mooncakes.io)
+
 ### Rabbit-TEA
 
 - [Introduce The Elm Architecture to MoonBit: build robust web app with simple principles | MoonBit](https://www.moonbitlang.com/blog/rabbit-tea)
