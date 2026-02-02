@@ -6,6 +6,7 @@ RomanTypeParser
 node_modules
 .mooncakes
 _build
+.vite
 
 src/main.js
 src/main.js.map
