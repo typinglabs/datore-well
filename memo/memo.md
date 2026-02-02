@@ -54,5 +54,36 @@ MoonbitのドキュメントにCourseとOnline Judgeがあって、ここら辺�
 
 を作っていくことにする。
 
-
 [TODO CLIアプリを作ってみる](./memo.md)
+
+とりあえず完成。いろいろ改善点はあるが、上記の内容については概ね理解できたので次に進む。
+
+### UIフレームワークの検証
+
+Rabbit-TEAと、luna.mbtを使ってみることにする。
+
+→Moonbitのレジストリ（mooncakes.io）がRabbit-TEAで書かれているとのことだったので、それを参考にRabbit-TEAを使って見ることにします。
+
+[moonbitlang/mooncakes.io: website of mooncakes.io, written in MoonBit](https://github.com/moonbitlang/mooncakes.io)
+
+### Rabbit-TEA
+
+[Rabbit-TEA メモ](./rabbit-tea.md)
+
+環境構築は[rabbit-tea-template/package.json at main · moonbit-community/rabbit-tea-template](https://github.com/moonbit-community/rabbit-tea-template)を参考にする。
+
+- `moon.mod.json`を書く
+- `bun add -D @tailwindcss/vite rabbit-tea-vite`
+- `src/index.html`と`src/style.css`を書く
+- `moon add Yoorkin/rabbit-tea`
+- `src/main/moon.pkg.json`に`Yoorkin/rabbit-tea`をインポート
+- `src/main/main.mbt`を書く
+  - めっちゃコンパイルエラー出る。先に`vite`の設定した方がいい？
+- `vite.config.js`を書いて、`vite`で開発サーバーを立ち上げて確認
+- `vite build`でビルドできることを確認する
+
+![alt text](image.png)
+
+これなんで起きてるんだろう。`moon.pkg.json`は書いてるんだけどね。ビルドはできてるから、LSPの問題な気がする。
+
+`preferred-target`をtypoしていたのが原因だった。moonbitのパッケージとビルド削除してから、`vite dev`してエディタ開き直すと直った。
