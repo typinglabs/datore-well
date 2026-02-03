@@ -6,10 +6,52 @@
   }
 
   body {
-    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans JP",
+    font-family: "Noto Sans JP", "Yu Gothic", "Hiragino Kaku Gothic ProN",
       "Helvetica Neue", Arial, sans-serif;
-    background-color: #ffffff;
+    background-color: #f7f7f7;
     background-image: none;
-    color: #0f172a;
+    color: #111111;
+  }
+}
+
+@layer components {
+  .tui-frame {
+    padding: 8px 0 0;
+  }
+
+  .tui-rule {
+    border-top: 1px solid rgba(17, 17, 17, 0.25);
+  }
+
+  .tui-chip {
+    padding: 2px 8px;
+    font-size: 12px;
+    background: rgba(17, 17, 17, 0.05);
+  }
+
+  .tui-input {
+    border: 1px solid rgba(17, 17, 17, 0.25);
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  .tui-button {
+    border-bottom: 1px solid #111111;
+    padding: 4px 2px;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    background: transparent;
+  }
+
+  .tui-panel {
+    padding: 16px;
+    background: rgba(17, 17, 17, 0.03);
+  }
+
+  .tui-highlight {
+    background: #111111;
+    color: #f7f7f7;
+    padding: 2px 6px;
   }
 }
