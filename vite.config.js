@@ -4,5 +4,6 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   root: "src",
-  plugins: [rabbitTEA(), tailwindcss()],
+  // plugins: [rabbitTEA(), tailwindcss()],
+  plugins: [tailwindcss()],
 });

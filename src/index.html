@@ -3,11 +3,207 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Rabbit-tea</title>
-    <link rel="stylesheet" type="text/css" href="/styles.css" />
-    <script src="/main.js" type="module"></script>
+    <title>Datore-Well</title>
+    <link rel="stylesheet" type="text/css" href="/style.css" />
+    <!-- <script src="/main.js" type="module"></script> -->
   </head>
-  <body>
-    <div id="app"></div>
+  <body class="min-h-screen antialiased">
+    <div id="app" class="px-6 py-10 sm:px-10">
+      <div class="mx-auto flex w-full max-w-5xl flex-col gap-8">
+        <header class="flex flex-wrap items-baseline justify-between gap-4">
+          <div>
+            <p class="text-xs uppercase tracking-[0.4em] text-slate-500">
+              Typing Practice
+            </p>
+            <h1
+              class="mt-2 text-3xl font-semibold tracking-wide text-slate-900 sm:text-4xl"
+            >
+              Datore-Well
+            </h1>
+          </div>
+          <div class="flex items-center gap-3 text-sm text-slate-500">
+            <span class="h-2 w-2 rounded-full bg-slate-300"></span>
+            <span>Prototype UI</span>
+          </div>
+        </header>
+
+        <section class="border-t border-slate-200 pt-8">
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p class="text-xs uppercase tracking-[0.25em] text-slate-500">
+                Title
+              </p>
+              <h2 class="mt-2 text-2xl font-semibold text-slate-900">
+                Session Setup
+              </h2>
+            </div>
+            <button
+              class="border border-slate-900 px-5 py-2 text-sm tracking-widest text-slate-900 transition hover:bg-slate-50"
+            >
+              Start Typing
+            </button>
+          </div>
+          <div class="mt-6 grid gap-6 lg:grid-cols-[1.2fr_1fr]">
+            <div class="space-y-5">
+              <div>
+                <p class="text-xs uppercase tracking-[0.2em] text-slate-500">
+                  Time
+                </p>
+                <div class="mt-3 flex flex-wrap gap-2">
+                  <button class="border border-slate-300 px-4 py-2 text-sm text-slate-700">
+                    15s
+                  </button>
+                  <button class="border border-slate-300 px-4 py-2 text-sm text-slate-700">
+                    30s
+                  </button>
+                  <button class="border border-slate-900 px-4 py-2 text-sm text-slate-900">
+                    60s
+                  </button>
+                  <button class="border border-slate-300 px-4 py-2 text-sm text-slate-700">
+                    120s
+                  </button>
+                </div>
+              </div>
+              <div>
+                <p class="text-xs uppercase tracking-[0.2em] text-slate-500">
+                  Category
+                </p>
+                <div class="mt-3 flex flex-wrap gap-2">
+                  <button class="border border-slate-900 px-4 py-2 text-sm text-slate-900">
+                    All
+                  </button>
+                  <button class="border border-slate-300 px-4 py-2 text-sm text-slate-700">
+                    Kanji
+                  </button>
+                  <button class="border border-slate-300 px-4 py-2 text-sm text-slate-700">
+                    Katakana
+                  </button>
+                  <button class="border border-slate-300 px-4 py-2 text-sm text-slate-700">
+                    Hiragana
+                  </button>
+                </div>
+              </div>
+              <label class="block">
+                <p class="text-xs uppercase tracking-[0.2em] text-slate-500">
+                  Filter
+                </p>
+                <input
+                  class="mt-3 w-full border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none"
+                  placeholder="Type roman or kana to filter"
+                />
+              </label>
+            </div>
+            <div class="border border-dashed border-slate-200 p-5">
+              <p class="text-xs uppercase tracking-[0.2em] text-slate-500">
+                Preview
+              </p>
+              <div class="mt-4 flex flex-wrap gap-2 text-sm text-slate-700">
+                <span class="border border-slate-200 px-3 py-1">生活</span>
+                <span class="border border-slate-200 px-3 py-1">存在</span>
+                <span class="border border-slate-200 px-3 py-1">完走</span>
+                <span class="border border-slate-200 px-3 py-1">調子</span>
+                <span class="border border-slate-200 px-3 py-1">時間</span>
+                <span class="border border-slate-200 px-3 py-1">相談</span>
+                <span class="border border-slate-200 px-3 py-1">ワクワク</span>
+                <span class="border border-slate-200 px-3 py-1">お互い</span>
+              </div>
+              <p class="mt-6 text-sm text-slate-500">
+                Start typing to begin the session.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section class="border-t border-slate-200 pt-8">
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p class="text-xs uppercase tracking-[0.25em] text-slate-500">
+                Game
+              </p>
+              <h2 class="mt-2 text-2xl font-semibold text-slate-900">
+                Typing Flow
+              </h2>
+            </div>
+            <div class="flex items-center gap-6 text-sm text-slate-600">
+              <div>
+                <p class="text-xs uppercase tracking-[0.2em] text-slate-400">
+                  Time
+                </p>
+                <p class="mt-2 text-lg text-slate-900">00:48</p>
+              </div>
+              <div>
+                <p class="text-xs uppercase tracking-[0.2em] text-slate-400">
+                  Hits
+                </p>
+                <p class="mt-2 text-lg text-slate-900">134</p>
+              </div>
+              <div>
+                <p class="text-xs uppercase tracking-[0.2em] text-slate-400">
+                  Miss
+                </p>
+                <p class="mt-2 text-lg text-slate-900">2</p>
+              </div>
+            </div>
+          </div>
+          <div class="mt-6 border border-slate-200 px-5 py-6 text-lg leading-relaxed text-slate-700">
+            <span class="text-slate-400">生活 存在</span>
+            <span class="mx-2 bg-slate-900 px-2 py-1 text-sm text-white">彼</span>
+            完走 可能性 調子 時間 正当 手段 選択 資料
+          </div>
+          <div class="mt-6 grid gap-4 sm:grid-cols-[1fr_auto]">
+            <div class="border border-slate-200 px-4 py-3 text-sm text-slate-700">
+              seikatu sonzai kare kanousei tyousi jikan
+            </div>
+            <button class="border border-slate-300 px-5 py-2 text-sm text-slate-700">
+              Pause
+            </button>
+          </div>
+        </section>
+
+        <section class="border-t border-slate-200 pt-8">
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p class="text-xs uppercase tracking-[0.25em] text-slate-500">
+                Result
+              </p>
+              <h2 class="mt-2 text-2xl font-semibold text-slate-900">
+                Session Summary
+              </h2>
+            </div>
+            <div class="flex gap-2">
+              <button class="border border-slate-900 px-4 py-2 text-sm text-slate-900">
+                Retry
+              </button>
+              <button class="border border-slate-300 px-4 py-2 text-sm text-slate-700">
+                Title
+              </button>
+            </div>
+          </div>
+          <div class="mt-6 grid gap-4 sm:grid-cols-3">
+            <div class="border border-slate-200 p-4 text-sm text-slate-700">
+              <p class="text-xs uppercase tracking-[0.2em] text-slate-400">
+                Accuracy
+              </p>
+              <p class="mt-3 text-2xl text-slate-900">92%</p>
+            </div>
+            <div class="border border-slate-200 p-4 text-sm text-slate-700">
+              <p class="text-xs uppercase tracking-[0.2em] text-slate-400">
+                WPM
+              </p>
+              <p class="mt-3 text-2xl text-slate-900">58</p>
+            </div>
+            <div class="border border-slate-200 p-4 text-sm text-slate-700">
+              <p class="text-xs uppercase tracking-[0.2em] text-slate-400">
+                CPM
+              </p>
+              <p class="mt-3 text-2xl text-slate-900">290</p>
+            </div>
+          </div>
+          <div class="mt-6 border border-dashed border-slate-200 px-4 py-5 text-xs text-slate-500">
+            Graph preview goes here.
+          </div>
+        </section>
+      </div>
+    </div>
   </body>
 </html>
