@@ -3,7 +3,7 @@ enum Screen {
   Top
   Playing
   Result
-}
+} derive(Show, Eq)
 
 ///|
 enum Category {
@@ -17,6 +17,7 @@ enum Category {
 struct Model {
   screen : Screen
   time_seconds : Int
+  timer : Timer
   category : Category
   filter : String
   typing_input : String
@@ -27,12 +28,15 @@ struct Model {
   awaiting_space : Bool
   completed_kana : String
   completed_roman : String
+  hits : Int
+  miss : Int
 }
 
 ///|
 let model : Model = {
   screen: Top,
   time_seconds: 60,
+  timer: create_timer(60 * 1000),
   category: All,
   filter: "",
   typing_input: "",
@@ -43,6 +47,8 @@ let model : Model = {
   awaiting_space: false,
   completed_kana: "",
   completed_roman: "",
+  hits: 0,
+  miss: 0,
 }
 
 ///|
@@ -56,10 +62,18 @@ enum Msg {
   UpdateTyping(String)
   StartTyping
   StopTyping
+  Tick
+}
+///|
+extern "js" fn set_timeout(f : () -> Unit, ms : Int) = "(f,ms) => setTimeout(f, ms)"
+
+///|
+fn schedule_tick(ms : Int) -> @cmd.Cmd[Msg] {
+  @cmd.Cmd(fn(events) { set_timeout(fn() { events.trigger_update(Tick) }, ms) })
 }
 
 ///|
-fn update(msg : Msg, model : Model) -> (@tea.Cmd[Msg], Model) {
+fn update(msg : Msg, model : Model) -> (@cmd.Cmd[Msg], Model) {
   match msg {
     Start => {
       let (queue, next_index) = try {
@@ -68,11 +82,13 @@ fn update(msg : Msg, model : Model) -> (@tea.Cmd[Msg], Model) {
         _ => ([], model.next_word_index)
       }
       let typing_session = init_session_from_queue(queue)
+      let timer = start_timer(create_timer(model.time_seconds * 1000))
       (
-        @tea.none(),
+        schedule_tick(1000),
         {
           ..model,
           screen: Playing,
+          timer,
           is_typing_active: true,
           typing_input: "",
           word_queue: queue,
@@ -81,22 +97,25 @@ fn update(msg : Msg, model : Model) -> (@tea.Cmd[Msg], Model) {
           awaiting_space: false,
           completed_kana: "",
           completed_roman: "",
+          hits: 0,
+          miss: 0,
         },
       )
     }
-    GoTitle => (@tea.none(), { ..model, screen: Top })
-    GoResult => (@tea.none(), { ..model, screen: Result })
-    SelectTime(value) => (@tea.none(), { ..model, time_seconds: value })
-    SelectCategory(value) => (@tea.none(), { ..model, category: value })
-    UpdateFilter(value) => (@tea.none(), { ..model, filter: value })
-    UpdateTyping(value) => (@tea.none(), apply_typing_input(model, value))
+    GoTitle => (@cmd.none(), { ..model, screen: Top })
+    GoResult => (@cmd.none(), { ..model, screen: Result })
+    SelectTime(value) =>
+      (@cmd.none(), { ..model, time_seconds: value, timer: create_timer(value * 1000) })
+    SelectCategory(value) => (@cmd.none(), { ..model, category: value })
+    UpdateFilter(value) => (@cmd.none(), { ..model, filter: value })
+    UpdateTyping(value) => (@cmd.none(), apply_typing_input(model, value))
     StartTyping => {
       let typing_session = match model.typing_session {
         Some(_) => model.typing_session
         None => init_session_from_queue(model.word_queue)
       }
       (
-        @tea.none(),
+        @cmd.none(),
         {
           ..model,
           is_typing_active: true,
@@ -105,7 +124,24 @@ fn update(msg : Msg, model : Model) -> (@tea.Cmd[Msg], Model) {
         },
       )
     }
-    StopTyping => (@tea.none(), { ..model, is_typing_active: false })
+    StopTyping => (@cmd.none(), { ..model, is_typing_active: false })
+    Tick => {
+      if model.screen != Playing {
+        (@cmd.none(), model)
+      } else {
+        let next_timer = tick_timer(model.timer, 1000)
+        let next_model = {
+          ..model,
+          timer: next_timer,
+          is_typing_active: if is_finished(next_timer) { false } else { model.is_typing_active },
+        }
+        if !is_finished(next_timer) {
+          (schedule_tick(1000), next_model)
+        } else {
+          (@cmd.none(), next_model)
+        }
+      }
+    }
   }
 }
 
@@ -170,13 +206,15 @@ fn apply_typing_input(model : Model, value : String) -> Model {
                     awaiting_space: true,
                     completed_kana: model.completed_kana + session.word.kana,
                     completed_roman: model.completed_roman + session.word.roman,
+                    hits: model.hits + 1,
                   }
                 }
-                WrongKey => model
+                WrongKey => { ..model, miss: model.miss + 1 }
                 CorrectKey =>
                   {
                     ..model,
                     typing_session: Some({ ..session, roman_state: next_state }),
+                    hits: model.hits + 1,
                   }
               }
             } catch {

@@ -21,15 +21,15 @@ fn playing_screen(model : Model) -> @html.Html[Msg] {
         div(class="flex items-center gap-6 text-sm", [
           div([
             p(class="text-xs uppercase tracking-[0.2em]", [text("Time")]),
-            p(class="mt-2 text-lg", [text("00:48")]),
+            p(class="mt-2 text-lg", [text(format_timer(model.timer))]),
           ]),
           div([
             p(class="text-xs uppercase tracking-[0.2em]", [text("Hits")]),
-            p(class="mt-2 text-lg", [text("134")]),
+            p(class="mt-2 text-lg", [text(model.hits.to_string())]),
           ]),
           div([
             p(class="text-xs uppercase tracking-[0.2em]", [text("Miss")]),
-            p(class="mt-2 text-lg", [text("2")]),
+            p(class="mt-2 text-lg", [text(model.miss.to_string())]),
           ]),
         ]),
       ]),
@@ -62,11 +62,26 @@ fn playing_screen(model : Model) -> @html.Html[Msg] {
           ]),
         ]),
       ]),
-      div(class="mt-6 grid gap-4 sm:grid-cols-[1fr_auto]", [
-        button(class="tui-button", click=StopTyping, [text("Pause")]),
-      ]),
     ]),
   ])
+}
+
+///|
+fn format_timer(timer : Timer) -> String {
+  let total_seconds = remaining_ms(timer) / 1000
+  let minutes = total_seconds / 60
+  let seconds = total_seconds % 60
+  let minute_text = if minutes < 10 {
+    "0" + minutes.to_string()
+  } else {
+    minutes.to_string()
+  }
+  let second_text = if seconds < 10 {
+    "0" + seconds.to_string()
+  } else {
+    seconds.to_string()
+  }
+  minute_text + ":" + second_text
 }
 
 ///|
