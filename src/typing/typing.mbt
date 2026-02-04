@@ -1,5 +1,5 @@
 ///|
-struct RomanState {
+pub struct RomanState {
   typed_roman : String
   remaining_roman : String
   typed_kana : String
@@ -7,14 +7,14 @@ struct RomanState {
 } derive(Show, Eq)
 
 ///|
-enum RomanResult {
+pub enum RomanResult {
   CorrectKey // 正しいキーを入力
   WrongKey // 間違ったキーを入力
   WordCompleted // 正しいキーを入力して、完了
 } derive(Show, Eq)
 
 ///|
-type ApplyKeyFn = (RomanState, Char) -> (RomanState, RomanResult) raise Error
+pub type ApplyKeyFn = (RomanState, Char) -> (RomanState, RomanResult) raise Error
 
 ///|
 priv struct RomanEngine {
@@ -26,7 +26,9 @@ priv struct RomanEngine {
 }
 
 ///|
-fn create_roman_engine(kana : String) -> (RomanState, ApplyKeyFn) raise Error {
+pub fn create_roman_engine(
+  kana : String,
+) -> (RomanState, ApplyKeyFn) raise Error {
   let (graph, dist) = build_graph_from_kana_with_dist(kana)
   let start_id = get_node_id({ kana_index: 0, buffer: "" })
   let goal_id = get_node_id({ kana_index: kana[:].length(), buffer: "" })

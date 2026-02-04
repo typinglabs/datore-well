@@ -5,6 +5,11 @@
       "path": "Yoorkin/rabbit-tea",
       "alias": "tea"
     },
-    "Yoorkin/rabbit-tea/html"
+    "Yoorkin/rabbit-tea/cmd",
+    "Yoorkin/rabbit-tea/html",
+    {
+      "path": "typinglabs/datore_well/typing",
+      "alias": "typing"
+    }
   ]
 }

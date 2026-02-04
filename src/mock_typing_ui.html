@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Typing UI Mock</title>
+    <style>
+      :root {
+        color-scheme: light;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          "Noto Sans JP", "Yu Gothic", "Hiragino Kaku Gothic ProN",
+          "Helvetica Neue", Arial, sans-serif;
+        background: #ffffff;
+        color: #111111;
+      }
+
+      .page {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 32px 20px;
+      }
+
+      .frame {
+        width: min(880px, 100%);
+        display: grid;
+        gap: 24px;
+      }
+
+      .title {
+        font-size: 14px;
+        letter-spacing: 0.25em;
+        text-transform: uppercase;
+      }
+
+      .panel {
+        display: grid;
+        gap: 16px;
+      }
+
+      .baseline {
+        display: grid;
+        gap: 6px;
+        font-size: 22px;
+        line-height: 1.8;
+        font-feature-settings: "palt";
+      }
+
+      .kana {
+        font-size: 26px;
+      }
+
+      .baseline .row {
+        display: grid;
+        place-items: center;
+        font-variant-ligatures: none;
+        white-space: pre;
+      }
+
+      .kana,
+      .roman {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: baseline;
+        column-gap: 0;
+      }
+
+      .left {
+        color: #111111;
+        text-align: right;
+        white-space: pre;
+        padding-right: 8px;
+      }
+
+      .cursor {
+        color: #111111;
+        text-align: center;
+        width: 0;
+        border-left: 2px solid #111111;
+        height: 1em;
+        justify-self: center;
+        align-self: center;
+      }
+
+      .cursor.hidden {
+        opacity: 0;
+      }
+
+      .right {
+        color: #111111;
+        opacity: 0.5;
+        text-align: left;
+        white-space: pre;
+        padding-left: 8px;
+      }
+
+      .roman {
+        font-family:
+          ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono",
+          monospace;
+        font-size: 20px;
+      }
+
+      .input-wrap {
+        display: grid;
+        gap: 8px;
+      }
+
+      .hint {
+        font-size: 12px;
+        opacity: 0.6;
+      }
+
+      .input-zone {
+        border: 1px solid #111111;
+        padding: 12px;
+        font-size: 14px;
+        background: #ffffff;
+        min-height: 44px;
+        cursor: text;
+      }
+
+      .input-zone.is-active {
+        outline: 2px solid #111111;
+        outline-offset: 2px;
+      }
+
+      .status {
+        font-size: 12px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        opacity: 0.6;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="frame">
+        <div>
+          <div class="title">Typing UI Mock</div>
+          <div class="status" id="status">idle</div>
+        </div>
+
+        <div class="panel">
+          <div class="baseline input-zone" id="typing-zone" tabindex="0">
+            <div class="row">
+              <div class="kana">
+                <span class="left" id="kana-left"></span>
+                <span class="cursor" id="kana-cursor"></span>
+                <span class="right" id="kana-right"></span>
+              </div>
+            </div>
+            <div class="row">
+              <div class="roman">
+                <span class="left" id="roman-left"></span>
+                <span class="cursor" id="roman-cursor"></span>
+                <span class="right" id="roman-right"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="input-wrap">
+            <div class="hint">
+              クリックして入力開始。何かキーを押すと次の状態へ進みます（判定は適当）。
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const states = [
+        {
+          kanaLeft: "",
+          kanaRight: "したい ことに",
+          romanLeft: "",
+          romanRight: "sitai kotoni",
+        },
+        {
+          kanaLeft: "",
+          kanaRight: "したい ことに",
+          romanLeft: "s",
+          romanRight: "itai kotoni",
+        },
+        {
+          kanaLeft: "し",
+          kanaRight: "たい ことに",
+          romanLeft: "si",
+          romanRight: "tai kotoni",
+        },
+        {
+          kanaLeft: "し",
+          kanaRight: "たい ことに",
+          romanLeft: "sit",
+          romanRight: "ai kotoni",
+        },
+        {
+          kanaLeft: "した",
+          kanaRight: "い ことに",
+          romanLeft: "sita",
+          romanRight: "i kotoni",
+        },
+        {
+          kanaLeft: "したい",
+          kanaRight: " ことに",
+          romanLeft: "sitai",
+          romanRight: " kotoni",
+        },
+        {
+          kanaLeft: "したい ",
+          kanaRight: "ことに",
+          romanLeft: "sitai ",
+          romanRight: "kotoni",
+        },
+        {
+          kanaLeft: "したい ",
+          kanaRight: "ことに",
+          romanLeft: "sitai k",
+          romanRight: "otoni",
+        },
+        {
+          kanaLeft: "したい こ",
+          kanaRight: "とに",
+          romanLeft: "sitai ko",
+          romanRight: "toni",
+        },
+        {
+          kanaLeft: "したい こ",
+          kanaRight: "とに",
+          romanLeft: "sitai kot",
+          romanRight: "oni",
+        },
+        {
+          kanaLeft: "したい こと",
+          kanaRight: "に",
+          romanLeft: "sitai koto",
+          romanRight: "ni",
+        },
+        {
+          kanaLeft: "したい こと",
+          kanaRight: "に",
+          romanLeft: "sitai koton",
+          romanRight: "i",
+        },
+        {
+          kanaLeft: "したい ことに",
+          kanaRight: "",
+          romanLeft: "sitai kotoni",
+          romanRight: "",
+        },
+      ];
+
+      let index = 0;
+      let started = false;
+
+      const status = document.getElementById("status");
+      const typingZone = document.getElementById("typing-zone");
+      const kanaLeft = document.getElementById("kana-left");
+      const kanaRight = document.getElementById("kana-right");
+      const romanLeft = document.getElementById("roman-left");
+      const romanRight = document.getElementById("roman-right");
+      const kanaCursor = document.getElementById("kana-cursor");
+      const romanCursor = document.getElementById("roman-cursor");
+
+      const render = () => {
+        const state = states[index];
+        kanaLeft.textContent = state.kanaLeft;
+        kanaRight.textContent = state.kanaRight;
+        romanLeft.textContent = state.romanLeft;
+        romanRight.textContent = state.romanRight;
+        status.textContent = started ? "typing" : "idle";
+        kanaCursor.classList.toggle("hidden", !started);
+        romanCursor.classList.toggle("hidden", !started);
+        typingZone.classList.toggle("is-active", started);
+      };
+
+      const advance = () => {
+        if (!started) return;
+        index = (index + 1) % states.length;
+        render();
+      };
+
+      typingZone.addEventListener("click", () => {
+        started = true;
+        typingZone.focus();
+        render();
+      });
+
+      typingZone.addEventListener("blur", () => {
+        started = false;
+        render();
+      });
+
+      window.addEventListener("keydown", (event) => {
+        if (!started) return;
+        if (
+          event.key.length === 1 ||
+          event.key === " " ||
+          event.key === "Backspace"
+        ) {
+          advance();
+        }
+      });
+
+      render();
+    </script>
+  </body>
+</html>
