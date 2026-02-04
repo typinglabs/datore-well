@@ -1,5 +1,5 @@
 ///|
-fn playing_screen(_model : Model) -> @html.Html[Msg] {
+fn playing_screen(model : Model) -> @html.Html[Msg] {
   div(class="mx-auto flex w-full max-w-5xl flex-col gap-8", [
     section(class="tui-frame", [
       div(class="flex flex-wrap items-center justify-between gap-4", [
@@ -29,9 +29,12 @@ fn playing_screen(_model : Model) -> @html.Html[Msg] {
         text("完走 可能性 調子 時間 正当 手段 選択 資料"),
       ]),
       div(class="mt-6 grid gap-4 sm:grid-cols-[1fr_auto]", [
-        div(class="tui-input", [
-          text("seikatu sonzai kare kanousei tyousi jikan"),
-        ]),
+        input(
+          class="tui-input",
+          placeholder="Type here...",
+          value=model.typing_input,
+          input=UpdateTyping(_),
+        ),
         button(class="tui-button", [text("Pause")]),
       ]),
     ]),

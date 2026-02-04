@@ -19,6 +19,7 @@ struct Model {
   time_seconds : Int
   category : Category
   filter : String
+  typing_input : String
 } derive(Show, Eq)
 
 ///|
@@ -27,6 +28,7 @@ let model : Model = {
   time_seconds: 60,
   category: All,
   filter: "",
+  typing_input: "",
 }
 
 ///|
@@ -37,6 +39,7 @@ enum Msg {
   SelectTime(Int)
   SelectCategory(Category)
   UpdateFilter(String)
+  UpdateTyping(String)
 }
 
 ///|
@@ -48,6 +51,7 @@ fn update(msg : Msg, model : Model) -> (@tea.Cmd[Msg], Model) {
     SelectTime(value) => (@tea.none(), { ..model, time_seconds: value })
     SelectCategory(value) => (@tea.none(), { ..model, category: value })
     UpdateFilter(value) => (@tea.none(), { ..model, filter: value })
+    UpdateTyping(value) => (@tea.none(), { ..model, typing_input: value })
   }
 }
 
