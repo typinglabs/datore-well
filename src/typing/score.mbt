@@ -26,6 +26,11 @@ pub fn calc_score(input : ScoreInput) -> Score {
 }
 
 ///|
+pub fn calc_score_from(correct_keys : Int, mistakes : Int, elapsed_ms : Int) -> Score {
+  calc_score({ correct_keys, mistakes, elapsed_ms })
+}
+
+///|
 fn calc_speed(correct_keys : Int, elapsed_ms : Int) -> (Int, Int) {
   if elapsed_ms <= 0 {
     return (0, 0)

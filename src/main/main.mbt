@@ -138,7 +138,10 @@ fn update(msg : Msg, model : Model) -> (@cmd.Cmd[Msg], Model) {
         if !is_finished(next_timer) {
           (schedule_tick(1000), next_model)
         } else {
-          (@cmd.none(), next_model)
+          (
+            @cmd.none(),
+            { ..next_model, screen: Result, is_typing_active: false },
+          )
         }
       }
     }
