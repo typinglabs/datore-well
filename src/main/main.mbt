@@ -3,34 +3,60 @@ enum Screen {
   Top
   Playing
   Result
-}
+} derive(Show, Eq)
+
+///|
+enum Category {
+  All
+  Kanji
+  Katakana
+  Hiragana
+} derive(Show, Eq)
 
 ///|
 struct Model {
   screen : Screen
+  time_seconds : Int
+  category : Category
+  filter : String
+} derive(Show, Eq)
+
+///|
+let model : Model = {
+  screen: Top,
+  time_seconds: 60,
+  category: All,
+  filter: "",
 }
 
 ///|
-let model : Model = { screen: Top }
-
-///|
 enum Msg {
-  Noop
+  Start
+  GoTitle
+  GoResult
+  SelectTime(Int)
+  SelectCategory(Category)
+  UpdateFilter(String)
 }
 
 ///|
 fn update(msg : Msg, model : Model) -> (@tea.Cmd[Msg], Model) {
   match msg {
-    Noop => (@tea.none(), model)
+    Start => (@tea.none(), { ..model, screen: Playing })
+    GoTitle => (@tea.none(), { ..model, screen: Top })
+    GoResult => (@tea.none(), { ..model, screen: Result })
+    SelectTime(value) => (@tea.none(), { ..model, time_seconds: value })
+    SelectCategory(value) => (@tea.none(), { ..model, category: value })
+    UpdateFilter(value) => (@tea.none(), { ..model, filter: value })
   }
 }
 
 ///|
 fn view(model : Model) -> @html.Html[Msg] {
   match model.screen {
-    Top => top_screen()
-    Playing => playing_screen()
-    Result => result_screen()
+    Top => top_screen(model)
+    Playing => playing_screen(model)
+    Result => result_screen(model)
   }
 }
 

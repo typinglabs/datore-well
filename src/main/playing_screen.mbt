@@ -1,5 +1,5 @@
 ///|
-fn[M] playing_screen() -> @html.Html[M] {
+fn playing_screen(_model : Model) -> @html.Html[Msg] {
   div(class="mx-auto flex w-full max-w-5xl flex-col gap-8", [
     section(class="tui-frame", [
       div(class="flex flex-wrap items-center justify-between gap-4", [
