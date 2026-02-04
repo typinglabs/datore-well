@@ -36,6 +36,7 @@ fn playing_screen(model : Model) -> @html.Html[Msg] {
       div(class="tui-rule mt-6", []),
       div(class=zone_class, click=StartTyping, [
         input(
+          id="typing-input",
           class="absolute inset-0 opacity-0 z-10",
           value=model.typing_input,
           input=UpdateTyping(_),

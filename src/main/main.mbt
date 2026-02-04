@@ -36,7 +36,7 @@ let model : Model = {
   category: All,
   filter: "",
   typing_input: "",
-  is_typing_active: false,
+  is_typing_active: true,
   next_word_index: 0,
   word_queue: [],
   typing_session: None,
@@ -73,7 +73,7 @@ fn update(msg : Msg, model : Model) -> (@tea.Cmd[Msg], Model) {
         {
           ..model,
           screen: Playing,
-          is_typing_active: false,
+          is_typing_active: true,
           typing_input: "",
           word_queue: queue,
           next_word_index: next_index,
