@@ -1,5 +1,16 @@
 ///|
 fn playing_screen(model : Model) -> @html.Html[Msg] {
+  let (kana_left, kana_right, roman_left, roman_right) = typing_state(model)
+  let cursor_class = if model.is_typing_active {
+    "cursor"
+  } else {
+    "cursor hidden"
+  }
+  let zone_class = if model.is_typing_active {
+    "mt-6 px-1 py-3 text-lg leading-relaxed input-zone relative is-active"
+  } else {
+    "mt-6 px-1 py-3 text-lg leading-relaxed input-zone relative"
+  }
   div(class="mx-auto flex w-full max-w-5xl flex-col gap-8", [
     section(class="tui-frame", [
       div(class="flex flex-wrap items-center justify-between gap-4", [
@@ -23,20 +34,91 @@ fn playing_screen(model : Model) -> @html.Html[Msg] {
         ]),
       ]),
       div(class="tui-rule mt-6", []),
-      div(class="mt-6 px-1 py-3 text-lg leading-relaxed", [
-        span(class="opacity-50", [text("生活 存在")]),
-        span(class="mx-2 tui-highlight text-sm", [text("彼")]),
-        text("完走 可能性 調子 時間 正当 手段 選択 資料"),
-      ]),
-      div(class="mt-6 grid gap-4 sm:grid-cols-[1fr_auto]", [
+      div(class=zone_class, click=StartTyping, [
         input(
-          class="tui-input",
-          placeholder="Type here...",
+          class="absolute inset-0 opacity-0 z-10",
           value=model.typing_input,
           input=UpdateTyping(_),
         ),
-        button(class="tui-button", [text("Pause")]),
+        div(class="baseline pointer-events-none", [
+          div(class="row", [
+            div(class="kana", [
+              div(class="left left-wrap", [
+                span(class="left-text", [text(kana_left)]),
+              ]),
+              span(class=cursor_class, []),
+              span(class="right", [text(kana_right)]),
+            ]),
+          ]),
+          div(class="row", [
+            div(class="roman", [
+              div(class="left left-wrap", [
+                span(class="left-text", [text(roman_left)]),
+              ]),
+              span(class=cursor_class, []),
+              span(class="right", [text(roman_right)]),
+            ]),
+          ]),
+        ]),
+      ]),
+      div(class="mt-6 grid gap-4 sm:grid-cols-[1fr_auto]", [
+        button(class="tui-button", click=StopTyping, [text("Pause")]),
       ]),
     ]),
   ])
 }
+
+///|
+fn typing_state(model : Model) -> (String, String, String, String) {
+  let (typed_kana, remaining_kana, typed_roman, remaining_roman) =
+    match model.typing_session {
+      None => ("", "", "", "")
+      Some(session) =>
+        (
+          session.roman_state.typed_kana,
+          session.roman_state.remaining_kana,
+          session.roman_state.typed_roman,
+          session.roman_state.remaining_roman,
+        )
+    }
+  let kana_left = model.completed_kana + typed_kana
+  let roman_left = model.completed_roman + typed_roman
+  let (kana_tail, roman_tail) = future_tail(model.word_queue)
+  let kana_right = join_right(remaining_kana, kana_tail)
+  let roman_right = join_right(remaining_roman, roman_tail)
+  (kana_left, kana_right, roman_left, roman_right)
+}
+
+///|
+fn future_tail(queue : Array[WordItem]) -> (String, String) {
+  if queue.length() <= 1 {
+    return ("", "")
+  }
+  let mut kana = ""
+  let mut roman = ""
+  let mut first = true
+  for item in queue[1:queue.length()] {
+    if first {
+      first = false
+    } else {
+      kana += " "
+      roman += " "
+    }
+    kana += item.kana
+    roman += item.roman
+  }
+  (kana, roman)
+}
+
+///|
+fn join_right(current : String, tail : String) -> String {
+  if current == "" {
+    if tail == "" { "" } else { " " + tail }
+  } else if tail == "" {
+    current
+  } else {
+    current + " " + tail
+  }
+}
+
+///|

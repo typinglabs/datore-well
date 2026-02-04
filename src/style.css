@@ -55,3 +55,104 @@
     padding: 2px 6px;
   }
 }
+
+@layer components {
+  .input-zone {
+    border: 1px solid #111111;
+    padding: 12px;
+    min-height: 44px;
+    cursor: text;
+    overflow: hidden;
+  }
+
+  .input-zone.is-active {
+    outline: 2px solid #111111;
+    outline-offset: 2px;
+  }
+
+  .baseline {
+    display: grid;
+    gap: 6px;
+    font-size: 22px;
+    line-height: 1.8;
+    font-feature-settings: "palt";
+    width: 100%;
+    min-width: 0;
+  }
+
+  .baseline .row {
+    display: grid;
+    place-items: center;
+    font-variant-ligatures: none;
+    white-space: pre;
+  }
+
+  .kana,
+  .roman {
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: baseline;
+    column-gap: 0;
+    min-width: 0;
+  }
+
+  .kana {
+    font-size: 26px;
+  }
+
+  .roman {
+    font-family:
+      ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono",
+      monospace;
+    font-size: 20px;
+  }
+
+  .left {
+    color: #111111;
+    white-space: pre;
+    padding-right: 8px;
+    min-width: 0;
+    width: 100%;
+    display: block;
+  }
+
+  .right {
+    color: #111111;
+    opacity: 0.5;
+    text-align: left;
+    white-space: pre;
+    padding-left: 8px;
+    overflow: hidden;
+    text-overflow: clip;
+    min-width: 0;
+    width: 100%;
+    display: block;
+  }
+
+  .left-wrap {
+    display: flex;
+    justify-content: flex-end;
+    overflow: hidden;
+    white-space: nowrap;
+    min-width: 0;
+  }
+
+  .left-text {
+    white-space: nowrap;
+  }
+
+  .cursor {
+    color: #111111;
+    text-align: center;
+    width: 0;
+    border-left: 2px solid #111111;
+    height: 1em;
+    justify-self: center;
+    align-self: center;
+  }
+
+  .cursor.hidden {
+    opacity: 0;
+  }
+}
