@@ -1,2 +1,2 @@
 ///|
-using @html {div, text, h1, h2, section, button, p}
+using @html {div, text, h1, h2, section, button, p, span, label, input}

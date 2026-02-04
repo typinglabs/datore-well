@@ -1,57 +1,37 @@
 ///|
-type Model = Int
+enum Screen {
+  Top
+  Playing
+  Result
+}
 
 ///|
-let model : Model = 0
+struct Model {
+  screen : Screen
+}
+
+///|
+let model : Model = { screen: Top }
 
 ///|
 enum Msg {
-  Increment
-  Decrement
+  Noop
 }
 
 ///|
 fn update(msg : Msg, model : Model) -> (@tea.Cmd[Msg], Model) {
   match msg {
-    Increment => (@tea.none(), model + 1)
-    Decrement => (@tea.none(), model - 1)
+    Noop => (@tea.none(), model)
   }
 }
 
 ///|
 fn view(model : Model) -> @html.Html[Msg] {
-  div(class="mx-auto flex w-full max-w-5xl flex-col gap-8", [
-    section(class="tui-frame", [
-      div(class="flex flex-wrap items-center justify-between gap-4", [
-        div([
-          p(class="text-xs uppercase tracking-[0.2em]", [text("Result")]),
-          h2(class="mt-2 text-2xl font-semibold", [text("Session Summary")]),
-        ]),
-        div(class="flex gap-2", [
-          button(class="tui-button", [text("Retry")]),
-          button(class="tui-button", [text("Title")]),
-        ]),
-      ]),
-      div(class="tui-rule mt-6", []),
-      div(class="mt-6 grid gap-4 sm:grid-cols-3", [
-        div(class="tui-panel text-sm", [
-          p(class="text-xs uppercase tracking-[0.2em]", [text("Accuracy")]),
-          p(class="mt-3 text-2xl", [text("92%")]),
-        ]),
-        div(class="tui-panel text-sm", [
-          p(class="text-xs uppercase tracking-[0.2em]", [text("WPM")]),
-          p(class="mt-3 text-2xl", [text("58")]),
-        ]),
-        div(class="tui-panel text-sm", [
-          p(class="text-xs uppercase tracking-[0.2em]", [text("CPM")]),
-          p(class="mt-3 text-2xl", [text("290")]),
-        ]),
-      ]),
-      div(class="mt-6 px-1 py-3 text-xs opacity-70", [
-        text("Graph preview goes here."),
-      ]),
-    ]),
-  ])
+  match model.screen {
+    Top => top_screen()
+    Playing => playing_screen()
+    Result => result_screen()
+  }
 }
 
 ///|
