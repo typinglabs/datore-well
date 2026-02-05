@@ -54,6 +54,7 @@ let model : Model = {
 ///|
 enum Msg {
   Start
+  StartFromInput(String)
   GoTitle
   GoResult
   SelectTime(Int)
@@ -75,34 +76,15 @@ fn schedule_tick(ms : Int) -> @cmd.Cmd[Msg] {
 ///|
 fn update(msg : Msg, model : Model) -> (@cmd.Cmd[Msg], Model) {
   match msg {
-    Start => {
-      let (queue, next_index) = try {
-        build_word_queue(model.next_word_index, 10)
-      } catch {
-        _ => ([], model.next_word_index)
+    Start => start_session(model)
+    StartFromInput(value) =>
+      if model.screen == Top && value != "" {
+        let (cmd, started_model) = start_session(model)
+        (cmd, apply_typing_input(started_model, value))
+      } else {
+        (@cmd.none(), model)
       }
-      let typing_session = init_session_from_queue(queue)
-      let timer = start_timer(create_timer(model.time_seconds * 1000))
-      (
-        schedule_tick(1000),
-        {
-          ..model,
-          screen: Playing,
-          timer,
-          is_typing_active: true,
-          typing_input: "",
-          word_queue: queue,
-          next_word_index: next_index,
-          typing_session,
-          awaiting_space: false,
-          completed_kana: "",
-          completed_roman: "",
-          hits: 0,
-          miss: 0,
-        },
-      )
-    }
-    GoTitle => (@cmd.none(), { ..model, screen: Top })
+    GoTitle => (@cmd.none(), { ..model, screen: Top, is_typing_active: false })
     GoResult => (@cmd.none(), { ..model, screen: Result })
     SelectTime(value) =>
       (@cmd.none(), { ..model, time_seconds: value, timer: create_timer(value * 1000) })
@@ -228,6 +210,35 @@ fn apply_typing_input(model : Model, value : String) -> Model {
       }
     }
   }
+}
+
+///|
+fn start_session(model : Model) -> (@cmd.Cmd[Msg], Model) {
+  let (queue, next_index) = try {
+    build_word_queue(model.next_word_index, 10)
+  } catch {
+    _ => ([], model.next_word_index)
+  }
+  let typing_session = init_session_from_queue(queue)
+  let timer = start_timer(create_timer(model.time_seconds * 1000))
+  (
+    schedule_tick(1000),
+    {
+      ..model,
+      screen: Playing,
+      timer,
+      is_typing_active: true,
+      typing_input: "",
+      word_queue: queue,
+      next_word_index: next_index,
+      typing_session,
+      awaiting_space: false,
+      completed_kana: "",
+      completed_roman: "",
+      hits: 0,
+      miss: 0,
+    },
+  )
 }
 
 ///|

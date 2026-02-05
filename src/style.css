@@ -3,6 +3,7 @@
 @layer base {
   :root {
     color-scheme: light;
+    --typing-center-offset: -24px;
   }
 
   body {
@@ -27,6 +28,7 @@
     padding: 2px 8px;
     font-size: 12px;
     background: rgba(17, 17, 17, 0.05);
+    cursor: pointer;
   }
 
   .tui-input {
@@ -42,6 +44,15 @@
     text-transform: uppercase;
     letter-spacing: 0.15em;
     background: transparent;
+    cursor: pointer;
+  }
+
+  .tui-brand {
+    font-size: 14px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    background: transparent;
+    cursor: pointer;
   }
 
   .tui-panel {
@@ -54,11 +65,61 @@
     color: #f7f7f7;
     padding: 2px 6px;
   }
+
+  .typing-stage {
+    position: relative;
+  }
+
+  .typing-center {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: min(100% - 3rem, 64rem);
+    transform: translate(-50%, calc(-50% + var(--typing-center-offset)));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .typing-center .input-zone {
+    pointer-events: auto;
+  }
+
+  .typing-zone {
+    width: 100%;
+  }
+
+  .top-screen {
+    position: relative;
+  }
+
+  .top-settings {
+    position: relative;
+    z-index: 1;
+  }
+
+  .settings-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.2fr);
+    gap: 24px;
+    align-items: start;
+  }
+
+  .typing-meta {
+    position: absolute;
+    right: 0;
+    top: 0;
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    z-index: 1;
+  }
 }
 
 @layer components {
   .input-zone {
-    border: 1px solid #111111;
+    border: none;
     padding: 12px;
     min-height: 44px;
     cursor: text;
@@ -66,8 +127,7 @@
   }
 
   .input-zone.is-active {
-    outline: 2px solid #111111;
-    outline-offset: 2px;
+    outline: none;
   }
 
   .baseline {
@@ -99,6 +159,7 @@
 
   .kana {
     font-size: 26px;
+    word-spacing: 0.5em;
   }
 
   .roman {
@@ -111,7 +172,7 @@
   .left {
     color: #111111;
     white-space: pre;
-    padding-right: 8px;
+    padding-right: 0;
     min-width: 0;
     width: 100%;
     display: block;
@@ -122,7 +183,7 @@
     opacity: 0.5;
     text-align: left;
     white-space: pre;
-    padding-left: 8px;
+    padding-left: 0;
     overflow: hidden;
     text-overflow: clip;
     min-width: 0;
@@ -139,7 +200,7 @@
   }
 
   .left-text {
-    white-space: nowrap;
+    white-space: pre;
   }
 
   .cursor {

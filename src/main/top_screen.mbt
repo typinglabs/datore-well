@@ -1,19 +1,19 @@
 ///|
 fn top_screen(model : Model) -> @html.Html[Msg] {
+  let (kana_left, kana_right, roman_left, roman_right) = top_preview_state()
+  let cursor_class = if model.is_typing_active { "cursor" } else { "cursor hidden" }
   div(class="mx-auto flex w-full max-w-5xl flex-col gap-8", [
-    section(class="tui-frame", [
+    section(class="tui-frame top-screen", [
       div(class="flex flex-wrap items-center justify-between gap-4", [
-        div([
-          p(class="text-xs uppercase tracking-[0.2em]", [text("Title")]),
-          h2(class="mt-2 text-2xl font-semibold", [text("Session Setup")]),
+        button(class="tui-brand", click=GoTitle, [
+          text("打トレ単語練習"),
         ]),
-        button(class="tui-button", click=Start, [text("Start Typing")]),
       ]),
       div(class="tui-rule mt-6", []),
-      div(class="mt-6 grid gap-6 lg:grid-cols-[1.2fr_1fr]", [
-        div(class="space-y-5", [
+      div(class="typing-stage mt-6", [
+        div(class="top-settings settings-row", [
           div([
-            p(class="text-xs uppercase tracking-[0.2em]", [text("Time")]),
+            p(class="text-xs uppercase tracking-[0.2em]", [text("時間")]),
             div(class="mt-3 flex flex-wrap gap-2", [
               time_button(model, 15),
               time_button(model, 30),
@@ -22,37 +22,53 @@ fn top_screen(model : Model) -> @html.Html[Msg] {
             ]),
           ]),
           div([
-            p(class="text-xs uppercase tracking-[0.2em]", [text("Category")]),
+            p(class="text-xs uppercase tracking-[0.2em]", [text("カテゴリー")]),
             div(class="mt-3 flex flex-wrap gap-2", [
-              category_button(model, All, "All"),
-              category_button(model, Kanji, "Kanji"),
-              category_button(model, Katakana, "Katakana"),
-              category_button(model, Hiragana, "Hiragana"),
+              category_button(model, All, "全て"),
+              category_button(model, Kanji, "漢字"),
+              category_button(model, Katakana, "カタカナ"),
+              category_button(model, Hiragana, "ひらがな"),
             ]),
           ]),
           label(class="block", [
-            p(class="text-xs uppercase tracking-[0.2em]", [text("Filter")]),
+            p(class="text-xs uppercase tracking-[0.2em]", [text("フィルター")]),
             input(
               class="tui-input mt-3 w-full",
-              placeholder="Type roman or kana to filter",
+              placeholder="ローマ字 / かな で絞り込み",
               value=model.filter,
               input=UpdateFilter(_),
             ),
           ]),
         ]),
-        div(class="tui-panel", [
-          p(class="text-xs uppercase tracking-[0.2em]", [text("Preview")]),
-          div(class="mt-4 flex flex-wrap gap-2 text-sm", [
-            span(class="tui-chip", [text("生活")]),
-            span(class="tui-chip", [text("存在")]),
-            span(class="tui-chip", [text("完走")]),
-            span(class="tui-chip", [text("調子")]),
-            span(class="tui-chip", [text("時間")]),
-            span(class="tui-chip", [text("相談")]),
-            span(class="tui-chip", [text("ワクワク")]),
-            span(class="tui-chip", [text("お互い")]),
+        div(class="typing-center px-1", [
+          div(class="input-zone typing-zone relative", click=StartTyping, [
+            input(
+              id="typing-input",
+              class="absolute inset-0 opacity-0 z-10",
+              value=model.typing_input,
+              input=StartFromInput(_),
+            ),
+            div(class="baseline pointer-events-none", [
+              div(class="row", [
+                div(class="kana", [
+                  div(class="left left-wrap", [
+                    span(class="left-text", [text(kana_left)]),
+                  ]),
+                  span(class=cursor_class, []),
+                  span(class="right", [text(kana_right)]),
+                ]),
+              ]),
+              div(class="row", [
+                div(class="roman", [
+                  div(class="left left-wrap", [
+                    span(class="left-text", [text(roman_left)]),
+                  ]),
+                  span(class=cursor_class, []),
+                  span(class="right", [text(roman_right)]),
+                ]),
+              ]),
+            ]),
           ]),
-          p(class="mt-6 text-sm", [text("Start typing to begin the session.")]),
         ]),
       ]),
     ]),
@@ -66,7 +82,7 @@ fn time_button(model : Model, value : Int) -> @html.Html[Msg] {
   } else {
     "tui-chip opacity-60"
   }
-  button(class=class_name, click=SelectTime(value), [text("\{value}s")])
+  button(class=class_name, click=SelectTime(value), [text("\{value}秒")])
 }
 
 ///|
@@ -81,4 +97,33 @@ fn category_button(
     "tui-chip opacity-60"
   }
   button(class=class_name, click=SelectCategory(value), [text(label)])
+}
+
+///|
+fn top_preview_state() -> (String, String, String, String) {
+  let (queue, _next_index) = try {
+    build_word_queue(0, 10)
+  } catch {
+    _ => ([], 0)
+  }
+  if queue.length() == 0 {
+    let kana_right = "あいうえお かきくけこ きゅう しゃ つ"
+    let roman_right = "aiueo kakikukeko kyuu sha tu"
+    ("", kana_right, "", roman_right)
+  } else {
+    let mut kana_right = ""
+    let mut roman_right = ""
+    let mut first = true
+    for item in queue {
+      if first {
+        first = false
+      } else {
+        kana_right += " "
+        roman_right += " "
+      }
+      kana_right += item.kana
+      roman_right += item.roman
+    }
+    ("", kana_right, "", roman_right)
+  }
 }
