@@ -1,7 +1,12 @@
 ///|
 fn top_screen(model : Model) -> @html.Html[Msg] {
   let (kana_left, kana_right, roman_left, roman_right) = top_preview_state()
-  let cursor_class = if model.is_typing_active { "cursor" } else { "cursor hidden" }
+  let cursor_class = if model.is_input_ready { "cursor" } else { "cursor hidden" }
+  let settings_class = if model.is_typing_active {
+    "top-settings settings-row is-fading"
+  } else {
+    "top-settings settings-row"
+  }
   div(class="mx-auto flex w-full max-w-5xl flex-col gap-8", [
     section(class="tui-frame top-screen", [
       div(class="flex flex-wrap items-center justify-between gap-4", [
@@ -11,7 +16,7 @@ fn top_screen(model : Model) -> @html.Html[Msg] {
       ]),
       div(class="tui-rule mt-6", []),
       div(class="typing-stage mt-6", [
-        div(class="top-settings settings-row", [
+        div(class=settings_class, [
           div([
             p(class="text-xs uppercase tracking-[0.2em]", [text("時間")]),
             div(class="mt-3 flex flex-wrap gap-2", [
@@ -40,7 +45,7 @@ fn top_screen(model : Model) -> @html.Html[Msg] {
             ),
           ]),
         ]),
-        div(class="typing-center px-1", [
+        div(class="typing-center", [
           div(class="input-zone typing-zone relative", click=StartTyping, [
             input(
               id="typing-input",

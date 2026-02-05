@@ -34,7 +34,7 @@ fn playing_screen(model : Model) -> @html.Html[Msg] {
             p(class="mt-2 text-lg", [text(model.miss.to_string())]),
           ]),
         ]),
-        div(class="typing-center px-1", [
+        div(class="typing-center", [
           div(class=zone_class + " typing-zone", click=StartTyping, [
             input(
               id="typing-input",

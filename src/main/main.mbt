@@ -22,6 +22,7 @@ struct Model {
   filter : String
   typing_input : String
   is_typing_active : Bool
+  is_input_ready : Bool
   next_word_index : Int
   word_queue : Array[WordItem]
   typing_session : TypingSession?
@@ -40,7 +41,8 @@ let model : Model = {
   category: All,
   filter: "",
   typing_input: "",
-  is_typing_active: true,
+  is_typing_active: false,
+  is_input_ready: true,
   next_word_index: 0,
   word_queue: [],
   typing_session: None,
@@ -84,7 +86,8 @@ fn update(msg : Msg, model : Model) -> (@cmd.Cmd[Msg], Model) {
       } else {
         (@cmd.none(), model)
       }
-    GoTitle => (@cmd.none(), { ..model, screen: Top, is_typing_active: false })
+    GoTitle =>
+      (@cmd.none(), { ..model, screen: Top, is_typing_active: false, is_input_ready: true })
     GoResult => (@cmd.none(), { ..model, screen: Result })
     SelectTime(value) =>
       (@cmd.none(), { ..model, time_seconds: value, timer: create_timer(value * 1000) })
@@ -92,19 +95,24 @@ fn update(msg : Msg, model : Model) -> (@cmd.Cmd[Msg], Model) {
     UpdateFilter(value) => (@cmd.none(), { ..model, filter: value })
     UpdateTyping(value) => (@cmd.none(), apply_typing_input(model, value))
     StartTyping => {
-      let typing_session = match model.typing_session {
-        Some(_) => model.typing_session
-        None => init_session_from_queue(model.word_queue)
+      if model.screen == Top {
+        (@cmd.none(), { ..model, is_input_ready: true })
+      } else {
+        let typing_session = match model.typing_session {
+          Some(_) => model.typing_session
+          None => init_session_from_queue(model.word_queue)
+        }
+        (
+          @cmd.none(),
+          {
+            ..model,
+            is_typing_active: true,
+            is_input_ready: true,
+            typing_input: "",
+            typing_session,
+          },
+        )
       }
-      (
-        @cmd.none(),
-        {
-          ..model,
-          is_typing_active: true,
-          typing_input: "",
-          typing_session,
-        },
-      )
     }
     StopTyping => (@cmd.none(), { ..model, is_typing_active: false })
     Tick => {
@@ -168,7 +176,7 @@ fn apply_typing_input(model : Model, value : String) -> Model {
       if model.awaiting_space {
         if ch == ' ' {
           let next_model = advance_to_next_word(model)
-          { ..next_model, typing_input: "" }
+          { ..next_model, typing_input: "", hits: model.hits + 1 }
         } else {
           { ..model, typing_input: "" }
         }
@@ -190,7 +198,7 @@ fn apply_typing_input(model : Model, value : String) -> Model {
                     typing_session: None,
                     awaiting_space: true,
                     completed_kana: model.completed_kana + session.word.kana,
-                    completed_roman: model.completed_roman + session.word.roman,
+                    completed_roman: model.completed_roman + next_state.typed_roman,
                     hits: model.hits + 1,
                   }
                 }
@@ -228,6 +236,7 @@ fn start_session(model : Model) -> (@cmd.Cmd[Msg], Model) {
       screen: Playing,
       timer,
       is_typing_active: true,
+      is_input_ready: true,
       typing_input: "",
       word_queue: queue,
       next_word_index: next_index,
