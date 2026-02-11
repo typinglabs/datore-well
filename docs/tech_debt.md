@@ -1,9 +1,11 @@
 # 技術的負債メモ (2026-02-05)
 
 ## 概要
+
 現状のコードベースは「まず動かす」優先で組み立てられており、状態管理・入力処理・画面構造が密結合になっている。Rabbit-TEAの恩恵は受けているが、画面ごとの状態や責務が分離されていないため、UI変更が状態バグに波及しやすい。
 
 ## 現状の症状 (観測できる問題)
+
 - 画面ごとに同じUI構造が重複しているため、見た目の調整が二重作業になる
 - `is_typing_active` と `is_input_ready` の二重フラグで挙動を調整しており、遷移条件が増えて分かりづらい
 - 入力は hidden input の `value` 末尾1文字で処理しているため、IMEやペースト入力に弱い
@@ -12,12 +14,14 @@
 - クリックで常時 `focus` するグローバルスクリプトが UI を跨いで効いている
 
 ## 根本原因
+
 - 状態が `Model` に集中しすぎており、画面単位のサブモデルに分割されていない
 - 入力処理とスコア更新が同一関数で行われ、処理の意図が分かりにくい
 - UIコンポーネントが抽象化されておらず、同一レイアウトが複数ファイルに複製されている
 - モック/実装の切り替えがなく、検証コードが本番コードに混ざりやすい
 
 ## 具体的な負債ポイント
+
 - `src/main/main.mbt`
   - `Model` が肥大化し、画面遷移の責務が分散
   - `StartTyping` と `StartFromInput` の分岐で入力状態が複雑化
@@ -29,11 +33,13 @@
   - 単語リストが固定で、カテゴリー/フィルターの拡張が前提になっていない
 
 ## リスク
+
 - UI改善のたびに状態バグが発生しやすい
 - スコア仕様の変更が `hits/miss` など複数箇所に波及する
 - IME入力や特殊入力で挙動が壊れる可能性が高い
 
 ## 改善の方向性
+
 短期 (数時間〜1日)
 - `Model` を画面単位に分割する方針を決める
 - 入力処理とスコア更新を関数分割して責務を明確化
@@ -51,3 +57,111 @@
 ## 参考
 - `rabbit-tea-examples/` の構成は、画面分割と更新関数の粒度の参考になる
 - `mooncakes.io` 配下の実装は、依存ライブラリの使い方の参照先になる
+
+## リファクタリングの方針について
+
+ViewとMsgは、アプリケーションの振る舞いを決めるものなので、特にMsgは変わらないの。
+
+なので、Msgを軸に、ModelとUpdateをどのようにするかを考えていけばよい。
+
+Msgを軸に、updateがどういう実装になっているべきか考えてみる。
+
+- 最初のキーを入力した -> (タイマーを開始する, タイピング画面)
+- キーが入力された -> (none, タイピング画面を、キー入力に応じて更新)
+- タイマーが進んだ ->
+  - if timer > 1 then -> (1秒後にカウントを減らす, タイマーを1減らす)
+  - else -> (none, 終了画面へ)
+- タイピング中に中断が押された -> (タイマー等を止める, ホーム画面へ)
+- ホーム画面で時間、カテゴリ、フィルタを変更した -> (none, 画面と単語リストを更新する)
+
+ここに含まれる具体的なロジックは隠蔽して、骨組みが分かるような実装をするべき。
+
+画面遷移をどうやって扱うべきなのかが分からないなぁ。
+
+Modelは、画面ごとに、その画面で必要なデータを持つことにする。
+
+`main.mbt`で、各モデルを統合する。
+
+```mbt
+// main.mbt
+enum Screen {
+  Home(HomeModel)
+  Typing(TypingModel)
+  Result(ResultModel)
+}
+
+struct Model {
+  screen: Screen
+  // 共通のデータがあれば、ここに保持する
+}
+```
+
+これでページ遷移しようと思うと、例えば`Typing`のupdateから`Result(ResultModel)`を返す、みたいなことをしないといけなくて、循環参照になる。
+
+これはあれだな、Rabbit-TEAがどうやってページ遷移を実装しているかを理解したほうがよさそう。こちらはURLの変更は伴わないけど、参考になるはず。
+
+↑aタグでの遷移を、特定のMsgを実行するようにしているっぽい。
+
+```mbt
+enum TypingMsg {
+  KeyPressed(key) // キーが押された
+  // GoToResult(route)
+}
+
+fn update(msg : TypingMsg, model : TypingModel) -> (Cmd, TypingModel) {
+  match msg {
+    KeyPressed => ...
+    // GoToResult
+    Tick => {
+      if model.timer > 1 {
+        // ...
+      } else {
+        // ここで結果画面に移動することを指示したい、だけどTypingModelを返すだけじゃページ遷移できない
+        (none(), @router.goto("result", TypingModel)) // ←こういう感じで書きたい、ただそれだとModelを返す必要があり、密結合になる
+      }
+    }
+  }
+}
+```
+
+相談して、戻り値で返して親側のupdateで処理するか、Cmdで返すかのどっちかにするとできそうだということがわかった。
+
+戻り値はできると思うけどElm Architectureに反しているような気がするので、Cmdでの実装を考える。
+
+```mbt
+// typing_screen.mbt
+enum TypingMsg {
+  KeyPressed(key)
+  GoToResult
+}
+
+fn update(msg : TypingMsg, model : TypingModel) -> (Cmd[TypingMsg], TypingModel) {
+  match msg {
+    KeyPressed(key) => // ...
+    Tick => {
+      if (model.timer > 1) {
+        // ...
+      } else {
+        (dispatch(GoToRsult), TypingModel)
+      }
+    }
+  }
+}
+
+// main.mbt
+
+enum Msg {
+  Typing(TypingMsg)
+}
+
+fn update(msg : Msg, model : Model) -> (Cmd[Msg], Model) {
+  match (msg, model) {
+    (Typing(msg), TypingModel(model)) if msg == GoToResult => {
+      // ページ移動の処理を書く
+    }
+    (Typing(msg), TypingModel(model)) => {
+      typing_update(model) // この後に、Cmd[TypingMsg] -> Cmd[Msg], TypingModel -> Modelの変換を行う
+    }
+  }
+}
+```

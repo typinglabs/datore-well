@@ -2,9 +2,6 @@
 using @html {div, text, section, button, p, span, label, input}
 
 ///|
-using @typing {type RomanState, type ApplyKeyFn}
-
-///|
 using @typing {type Timer}
 
 ///|

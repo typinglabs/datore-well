@@ -1,4 +1,37 @@
 ///|
+fn time_button(model : Model, value : Int) -> @html.Html[Msg] {
+  let class_name = if model.time_seconds == value {
+    "tui-chip font-semibold"
+  } else {
+    "tui-chip opacity-60"
+  }
+  button(class=class_name, click=SelectTime(value), [text("\{value}秒")])
+}
+
+///|
+fn category_button(
+  model : Model,
+  value : Category,
+  label : String,
+) -> @html.Html[Msg] {
+  let class_name = if model.category == value {
+    "tui-chip font-semibold"
+  } else {
+    "tui-chip opacity-60"
+  }
+  button(class=class_name, click=SelectCategory(value), [text(label)])
+}
+
+///|
+fn top_preview_state() -> (String, String, String, String) {
+  // ここでワード生成するとダメだと思う
+  let (queue, _) = build_word_queue(0, 10) catch { _ => ([], 0) }
+  let kana_right = queue.map(item => item.display).join(" ")
+  let roman_right = queue.map(item => item.roman).join(" ")
+  ("", kana_right, "", roman_right)
+}
+
+///|
 fn top_screen(model : Model) -> @html.Html[Msg] {
   let (kana_left, kana_right, roman_left, roman_right) = top_preview_state()
   let cursor_class = if model.is_input_ready {
@@ -47,7 +80,7 @@ fn top_screen(model : Model) -> @html.Html[Msg] {
               class="tui-input mt-3 w-full",
               placeholder="ローマ字 / かな で絞り込み",
               value=model.filter,
-              input=UpdateFilter(_),
+              input=x => UpdateFilter(x),
             ),
           ]),
         ]),
@@ -57,7 +90,7 @@ fn top_screen(model : Model) -> @html.Html[Msg] {
               id="typing-input",
               class="absolute inset-0 opacity-0 z-10",
               value=model.typing_input,
-              input=StartFromInput(_),
+              input=x => StartFromInput(x),
             ),
             div(class="baseline pointer-events-none", [
               div(class="row", [
@@ -84,53 +117,4 @@ fn top_screen(model : Model) -> @html.Html[Msg] {
       ]),
     ]),
   ])
-}
-
-///|
-fn time_button(model : Model, value : Int) -> @html.Html[Msg] {
-  let class_name = if model.time_seconds == value {
-    "tui-chip font-semibold"
-  } else {
-    "tui-chip opacity-60"
-  }
-  button(class=class_name, click=SelectTime(value), [text("\{value}秒")])
-}
-
-///|
-fn category_button(
-  model : Model,
-  value : Category,
-  label : String,
-) -> @html.Html[Msg] {
-  let class_name = if model.category == value {
-    "tui-chip font-semibold"
-  } else {
-    "tui-chip opacity-60"
-  }
-  button(class=class_name, click=SelectCategory(value), [text(label)])
-}
-
-///|
-fn top_preview_state() -> (String, String, String, String) {
-  let (queue, _next_index) = build_word_queue(0, 10) catch { _ => ([], 0) }
-  if queue.length() == 0 {
-    let kana_right = "あいうえお かきくけこ きゅう しゃ つ"
-    let roman_right = "aiueo kakikukeko kyuu sha tu"
-    ("", kana_right, "", roman_right)
-  } else {
-    let mut kana_right = ""
-    let mut roman_right = ""
-    let mut first = true
-    for item in queue {
-      if first {
-        first = false
-      } else {
-        kana_right += " "
-        roman_right += " "
-      }
-      kana_right += item.display
-      roman_right += item.roman
-    }
-    ("", kana_right, "", roman_right)
-  }
 }
