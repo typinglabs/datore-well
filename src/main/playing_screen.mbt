@@ -14,9 +14,7 @@ fn playing_screen(model : Model) -> @html.Html[Msg] {
   div(class="mx-auto flex w-full max-w-5xl flex-col gap-8", [
     section(class="tui-frame", [
       div(class="flex flex-wrap items-center justify-between gap-4", [
-        button(class="tui-brand", click=GoTitle, [
-          text("打トレ単語練習"),
-        ]),
+        button(class="tui-brand", click=GoTitle, [text("打トレ単語練習")]),
       ]),
       div(class="tui-rule mt-6", []),
       div(class="typing-stage mt-6", [
@@ -89,17 +87,25 @@ fn format_timer(timer : Timer) -> String {
 
 ///|
 fn typing_state(model : Model) -> (String, String, String, String) {
-  let (typed_kana, remaining_kana, typed_roman, remaining_roman) =
-    match model.typing_session {
-      None => ("", "", "", "")
-      Some(session) =>
-        (
-          session.roman_state.typed_kana,
-          session.roman_state.remaining_kana,
-          session.roman_state.typed_roman,
-          session.roman_state.remaining_roman,
-        )
-    }
+  let kana = match model.typing_session {
+    Some(session) => session.word.kana
+    _ => ""
+  }
+  let (typed_kana, remaining_kana, typed_roman, remaining_roman) = match
+    model.typing_session {
+    None => ("", "", "", "")
+    Some(session) =>
+      (
+        // session.roman_state.typed_kana,
+        // session.roman_state.remaining_kana,
+        // session.roman_state.typed_romaji,
+        try! kana[:][0:session.roman_state.typed_kana_len].to_string(),
+        try! kana[:][session.roman_state.typed_kana_len:].to_string(),
+        // session.roman_state.remaining_romaji,
+        session.roman_state.typed_romaji,
+        session.roman_state.remaining_romaji,
+      )
+  }
   let kana_left = model.completed_kana + typed_kana
   let roman_left = model.completed_roman + typed_roman
   let (kana_tail, roman_tail) = future_tail(model.word_queue)
@@ -132,7 +138,11 @@ fn future_tail(queue : Array[WordItem]) -> (String, String) {
 ///|
 fn join_right_with_sep(current : String, tail : String, sep : String) -> String {
   if current == "" {
-    if tail == "" { "" } else { sep + tail }
+    if tail == "" {
+      ""
+    } else {
+      sep + tail
+    }
   } else if tail == "" {
     current
   } else {

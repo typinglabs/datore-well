@@ -7,6 +7,7 @@
     },
     "Yoorkin/rabbit-tea/cmd",
     "Yoorkin/rabbit-tea/html",
+    "typinglabs/romaji_typing",
     {
       "path": "typinglabs/datore_well/typing",
       "alias": "typing"
