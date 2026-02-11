@@ -1,7 +1,11 @@
 ///|
 fn top_screen(model : Model) -> @html.Html[Msg] {
   let (kana_left, kana_right, roman_left, roman_right) = top_preview_state()
-  let cursor_class = if model.is_input_ready { "cursor" } else { "cursor hidden" }
+  let cursor_class = if model.is_input_ready {
+    "cursor"
+  } else {
+    "cursor hidden"
+  }
   let settings_class = if model.is_typing_active {
     "top-settings settings-row is-fading"
   } else {
@@ -10,9 +14,7 @@ fn top_screen(model : Model) -> @html.Html[Msg] {
   div(class="mx-auto flex w-full max-w-5xl flex-col gap-8", [
     section(class="tui-frame top-screen", [
       div(class="flex flex-wrap items-center justify-between gap-4", [
-        button(class="tui-brand", click=GoTitle, [
-          text("打トレ単語練習"),
-        ]),
+        button(class="tui-brand", click=GoTitle, [text("打トレ単語練習")]),
       ]),
       div(class="tui-rule mt-6", []),
       div(class="typing-stage mt-6", [
@@ -27,7 +29,9 @@ fn top_screen(model : Model) -> @html.Html[Msg] {
             ]),
           ]),
           div([
-            p(class="text-xs uppercase tracking-[0.2em]", [text("カテゴリー")]),
+            p(class="text-xs uppercase tracking-[0.2em]", [
+              text("カテゴリー"),
+            ]),
             div(class="mt-3 flex flex-wrap gap-2", [
               category_button(model, All, "全て"),
               category_button(model, Kanji, "漢字"),
@@ -36,7 +40,9 @@ fn top_screen(model : Model) -> @html.Html[Msg] {
             ]),
           ]),
           label(class="block", [
-            p(class="text-xs uppercase tracking-[0.2em]", [text("フィルター")]),
+            p(class="text-xs uppercase tracking-[0.2em]", [
+              text("フィルター"),
+            ]),
             input(
               class="tui-input mt-3 w-full",
               placeholder="ローマ字 / かな で絞り込み",
@@ -106,11 +112,7 @@ fn category_button(
 
 ///|
 fn top_preview_state() -> (String, String, String, String) {
-  let (queue, _next_index) = try {
-    build_word_queue(0, 10)
-  } catch {
-    _ => ([], 0)
-  }
+  let (queue, _next_index) = build_word_queue(0, 10) catch { _ => ([], 0) }
   if queue.length() == 0 {
     let kana_right = "あいうえお かきくけこ きゅう しゃ つ"
     let roman_right = "aiueo kakikukeko kyuu sha tu"
@@ -126,7 +128,7 @@ fn top_preview_state() -> (String, String, String, String) {
         kana_right += " "
         roman_right += " "
       }
-      kana_right += item.kana
+      kana_right += item.display
       roman_right += item.roman
     }
     ("", kana_right, "", roman_right)

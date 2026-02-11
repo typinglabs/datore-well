@@ -190,8 +190,11 @@ test "build_kana_graph" {
   )
   let path = shortest_path(graph, dist, "0|", "3|")
   let roman = edges_to_string(path)
-  inspect(path, content=(
-    #|[{to: "0|k", pressed_key: 'k'}, {to: "0|ky", pressed_key: 'y'}, {to: "2|", pressed_key: 'u'}, {to: "3|", pressed_key: 'u'}]
-  ))
+  inspect(
+    path,
+    content=(
+      #|[{to: "0|k", pressed_key: 'k'}, {to: "0|ky", pressed_key: 'y'}, {to: "2|", pressed_key: 'u'}, {to: "3|", pressed_key: 'u'}]
+    ),
+  )
   inspect(roman, content="kyuu")
 }

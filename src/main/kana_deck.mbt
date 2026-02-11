@@ -1,27 +1,23 @@
 ///|
 struct WordItem {
-  kana : String
+  annotated : String
+  display : String
   roman : String
 }
 
 ///|
-fn hiragana_words() -> Array[String] {
-  [
-    "あいうえお",
-    "かきくけこ",
-    "きゅう",
-    "しゃ",
-    "つ",
-  ]
-}
-
-///|
-fn init_hiragana_items() -> Array[WordItem] {
+fn init_datore_items() -> Array[WordItem] {
   let items : Array[WordItem] = []
-  for word in hiragana_words() {
+  for word in @typing.datore_words() {
     let result = try {
-      let (roman_state, _apply_key) = create_roman_engine(word)
-      Some({ kana: word, roman: roman_state.remaining_roman })
+      let (kanji_state, _apply_key) = @romaji_typing.create_kanji_engine(
+        word.text,
+      )
+      Some({
+        annotated: word.text,
+        display: kanji_state.display,
+        roman: kanji_state.remaining_romaji,
+      })
     } catch {
       _ => None
     }
@@ -34,16 +30,16 @@ fn init_hiragana_items() -> Array[WordItem] {
 }
 
 ///|
-let hiragana_items : Array[WordItem] = init_hiragana_items()
+let datore_items : Array[WordItem] = init_datore_items()
 
 ///|
 fn build_word_queue(
   start_index : Int,
   size : Int,
 ) -> (Array[WordItem], Int) raise Error {
-  let words = hiragana_items
+  let words = datore_items
   if words.length() == 0 {
-    abort("hiragana_words is empty")
+    abort("datore_words is empty")
   }
   let queue : Array[WordItem] = []
   let mut index = start_index % words.length()
@@ -59,13 +55,9 @@ fn advance_word_queue(
   queue : Array[WordItem],
   next_index : Int,
 ) -> (Array[WordItem], Int) {
-  let words = hiragana_items
+  let words = datore_items
   if queue.length() == 0 {
-    return try {
-      build_word_queue(next_index, 10)
-    } catch {
-      _ => ([], next_index)
-    }
+    return build_word_queue(next_index, 10) catch { _ => ([], next_index) }
   }
   let next_queue = queue[1:queue.length()].to_array()
   let word = words[next_index % words.length()]
@@ -74,7 +66,11 @@ fn advance_word_queue(
 }
 
 ///|
-fn make_word_item(word : String) -> WordItem raise Error {
-  let (roman_state, _apply_key) = create_roman_engine(word)
-  { kana: word, roman: roman_state.remaining_roman }
+fn make_word_item(word : @typing.Word) -> WordItem raise Error {
+  let (kanji_state, _apply_key) = @romaji_typing.create_kanji_engine(word.text)
+  {
+    annotated: word.text,
+    display: kanji_state.display,
+    roman: kanji_state.remaining_romaji,
+  }
 }

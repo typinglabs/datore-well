@@ -87,29 +87,25 @@ fn format_timer(timer : Timer) -> String {
 
 ///|
 fn typing_state(model : Model) -> (String, String, String, String) {
-  let kana = match model.typing_session {
-    Some(session) => session.word.kana
+  let display = match model.typing_session {
+    Some(session) => session.word.display
     _ => ""
   }
-  let (typed_kana, remaining_kana, typed_roman, remaining_roman) = match
+  let (typed_display, remaining_display, typed_roman, remaining_roman) = match
     model.typing_session {
     None => ("", "", "", "")
     Some(session) =>
       (
-        // session.roman_state.typed_kana,
-        // session.roman_state.remaining_kana,
-        // session.roman_state.typed_romaji,
-        try! kana[:][0:session.roman_state.typed_kana_len].to_string(),
-        try! kana[:][session.roman_state.typed_kana_len:].to_string(),
-        // session.roman_state.remaining_romaji,
-        session.roman_state.typed_romaji,
-        session.roman_state.remaining_romaji,
+        try! display[:][0:session.kanji_state.typed_kanji_len].to_string(),
+        try! display[:][session.kanji_state.typed_kanji_len:].to_string(),
+        session.kanji_state.typed_romaji,
+        session.kanji_state.remaining_romaji,
       )
   }
-  let kana_left = model.completed_kana + typed_kana
+  let kana_left = model.completed_display + typed_display
   let roman_left = model.completed_roman + typed_roman
   let (kana_tail, roman_tail) = future_tail(model.word_queue)
-  let kana_right = join_right_with_sep(remaining_kana, kana_tail, " ")
+  let kana_right = join_right_with_sep(remaining_display, kana_tail, " ")
   let roman_right = join_right_with_sep(remaining_roman, roman_tail, " ")
   (kana_left, kana_right, roman_left, roman_right)
 }
@@ -129,7 +125,7 @@ fn future_tail(queue : Array[WordItem]) -> (String, String) {
       kana += " "
       roman += " "
     }
-    kana += item.kana
+    kana += item.display
     roman += item.roman
   }
   (kana, roman)

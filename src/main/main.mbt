@@ -27,7 +27,7 @@ struct Model {
   word_queue : Array[WordItem]
   typing_session : TypingSession?
   awaiting_space : Bool
-  completed_kana : String
+  completed_display : String
   completed_roman : String
   hits : Int
   miss : Int
@@ -47,7 +47,7 @@ let model : Model = {
   word_queue: [],
   typing_session: None,
   awaiting_space: false,
-  completed_kana: "",
+  completed_display: "",
   completed_roman: "",
   hits: 0,
   miss: 0,
@@ -150,15 +150,17 @@ fn update(msg : Msg, model : Model) -> (@cmd.Cmd[Msg], Model) {
 ///|
 struct TypingSession {
   word : WordItem
-  roman_state : @romaji_typing.TypingState
-  apply_key : @romaji_typing.ApplyKeyFn
+  kanji_state : @romaji_typing.KanjiState
+  apply_key : @romaji_typing.ApplyKanjiKeyFn
 }
 
 ///|
 fn init_typing_session(word : WordItem) -> TypingSession? {
   try {
-    let (roman_state, apply_key) = @romaji_typing.create_kana_engine(word.kana)
-    Some({ word, roman_state, apply_key })
+    let (kanji_state, apply_key) = @romaji_typing.create_kanji_engine(
+      word.annotated,
+    )
+    Some({ word, kanji_state, apply_key })
   } catch {
     _ => None
   }
@@ -203,7 +205,8 @@ fn apply_typing_input(model : Model, value : String) -> Model {
                     ..model,
                     typing_session: None,
                     awaiting_space: true,
-                    completed_kana: model.completed_kana + session.word.kana,
+                    completed_display: model.completed_display +
+                    session.word.display,
                     completed_roman: model.completed_roman +
                     next_state.typed_romaji,
                     hits: model.hits + 1,
@@ -212,7 +215,7 @@ fn apply_typing_input(model : Model, value : String) -> Model {
                 CorrectKey =>
                   {
                     ..model,
-                    typing_session: Some({ ..session, roman_state: next_state }),
+                    typing_session: Some({ ..session, kanji_state: next_state }),
                     hits: model.hits + 1,
                   }
               }
@@ -245,7 +248,7 @@ fn start_session(model : Model) -> (@cmd.Cmd[Msg], Model) {
       next_word_index: next_index,
       typing_session,
       awaiting_space: false,
-      completed_kana: "",
+      completed_display: "",
       completed_roman: "",
       hits: 0,
       miss: 0,
@@ -255,10 +258,10 @@ fn start_session(model : Model) -> (@cmd.Cmd[Msg], Model) {
 
 ///|
 fn advance_to_next_word(model : Model) -> Model {
-  let mut completed_kana = model.completed_kana
+  let mut completed_display = model.completed_display
   let mut completed_roman = model.completed_roman
   if model.word_queue.length() > 1 {
-    completed_kana += " "
+    completed_display += " "
     completed_roman += " "
   }
   let (queue, next_index) = advance_word_queue(
@@ -272,7 +275,7 @@ fn advance_to_next_word(model : Model) -> Model {
     next_word_index: next_index,
     typing_session,
     awaiting_space: false,
-    completed_kana,
+    completed_display,
     completed_roman,
   }
 }
