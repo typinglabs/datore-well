@@ -27,7 +27,7 @@ struct Model {
   word_queue : Array[WordItem]
   typing_session : TypingSession?
   awaiting_space : Bool
-  completed_kana : String
+  completed_display : String
   completed_roman : String
   hits : Int
   miss : Int
@@ -47,7 +47,7 @@ let model : Model = {
   word_queue: [],
   typing_session: None,
   awaiting_space: false,
-  completed_kana: "",
+  completed_display: "",
   completed_roman: "",
   hits: 0,
   miss: 0,
@@ -55,18 +55,18 @@ let model : Model = {
 
 ///|
 enum Msg {
-  Start
-  StartFromInput(String)
-  GoTitle
-  GoResult
+  // Top
   SelectTime(Int)
   SelectCategory(Category)
   UpdateFilter(String)
+  StartFromInput(String)
+  // Playing
   UpdateTyping(String)
-  StartTyping
-  StopTyping
   Tick
+  // Result
+  GoTitle
 }
+
 ///|
 extern "js" fn set_timeout(f : () -> Unit, ms : Int) = "(f,ms) => setTimeout(f, ms)"
 
@@ -78,7 +78,14 @@ fn schedule_tick(ms : Int) -> @cmd.Cmd[Msg] {
 ///|
 fn update(msg : Msg, model : Model) -> (@cmd.Cmd[Msg], Model) {
   match msg {
-    Start => start_session(model)
+    // Home
+    SelectTime(value) =>
+      (
+        @cmd.none(),
+        { ..model, time_seconds: value, timer: create_timer(value * 1000) },
+      )
+    SelectCategory(value) => (@cmd.none(), { ..model, category: value })
+    UpdateFilter(value) => (@cmd.none(), { ..model, filter: value })
     StartFromInput(value) =>
       if model.screen == Top && value != "" {
         let (cmd, started_model) = start_session(model)
@@ -86,36 +93,9 @@ fn update(msg : Msg, model : Model) -> (@cmd.Cmd[Msg], Model) {
       } else {
         (@cmd.none(), model)
       }
-    GoTitle =>
-      (@cmd.none(), { ..model, screen: Top, is_typing_active: false, is_input_ready: true })
-    GoResult => (@cmd.none(), { ..model, screen: Result })
-    SelectTime(value) =>
-      (@cmd.none(), { ..model, time_seconds: value, timer: create_timer(value * 1000) })
-    SelectCategory(value) => (@cmd.none(), { ..model, category: value })
-    UpdateFilter(value) => (@cmd.none(), { ..model, filter: value })
+    // Typing
     UpdateTyping(value) => (@cmd.none(), apply_typing_input(model, value))
-    StartTyping => {
-      if model.screen == Top {
-        (@cmd.none(), { ..model, is_input_ready: true })
-      } else {
-        let typing_session = match model.typing_session {
-          Some(_) => model.typing_session
-          None => init_session_from_queue(model.word_queue)
-        }
-        (
-          @cmd.none(),
-          {
-            ..model,
-            is_typing_active: true,
-            is_input_ready: true,
-            typing_input: "",
-            typing_session,
-          },
-        )
-      }
-    }
-    StopTyping => (@cmd.none(), { ..model, is_typing_active: false })
-    Tick => {
+    Tick =>
       if model.screen != Playing {
         (@cmd.none(), model)
       } else {
@@ -123,7 +103,11 @@ fn update(msg : Msg, model : Model) -> (@cmd.Cmd[Msg], Model) {
         let next_model = {
           ..model,
           timer: next_timer,
-          is_typing_active: if is_finished(next_timer) { false } else { model.is_typing_active },
+          is_typing_active: if is_finished(next_timer) {
+            false
+          } else {
+            model.is_typing_active
+          },
         }
         if !is_finished(next_timer) {
           (schedule_tick(1000), next_model)
@@ -134,22 +118,29 @@ fn update(msg : Msg, model : Model) -> (@cmd.Cmd[Msg], Model) {
           )
         }
       }
-    }
+    // Result
+    GoTitle =>
+      (
+        @cmd.none(),
+        { ..model, screen: Top, is_typing_active: false, is_input_ready: true },
+      )
   }
 }
 
 ///|
 struct TypingSession {
   word : WordItem
-  roman_state : RomanState
-  apply_key : ApplyKeyFn
+  kanji_state : @romaji_typing.KanjiState
+  apply_key : @romaji_typing.ApplyKanjiKeyFn
 }
 
 ///|
 fn init_typing_session(word : WordItem) -> TypingSession? {
   try {
-    let (roman_state, apply_key) = create_roman_engine(word.kana)
-    Some({ word, roman_state, apply_key })
+    let (kanji_state, apply_key) = @romaji_typing.create_kanji_engine(
+      word.annotated,
+    )
+    Some({ word, kanji_state, apply_key })
   } catch {
     _ => None
   }
@@ -172,7 +163,7 @@ fn apply_typing_input(model : Model, value : String) -> Model {
   let key = last_char(value)
   match key {
     None => { ..model, typing_input: value }
-    Some(ch) => {
+    Some(ch) =>
       if model.awaiting_space {
         if ch == ' ' {
           let next_model = advance_to_next_word(model)
@@ -187,26 +178,24 @@ fn apply_typing_input(model : Model, value : String) -> Model {
           None => model
           Some(session) =>
             try {
-              let (next_state, result) = (session.apply_key)(
-                session.roman_state,
-                ch,
-              )
+              let (next_state, result) = (session.apply_key)(ch)
               match result {
-                WordCompleted => {
+                WordCompleted =>
                   {
                     ..model,
                     typing_session: None,
                     awaiting_space: true,
-                    completed_kana: model.completed_kana + session.word.kana,
-                    completed_roman: model.completed_roman + next_state.typed_roman,
+                    completed_display: model.completed_display +
+                    session.word.display,
+                    completed_roman: model.completed_roman +
+                    next_state.typed_romaji,
                     hits: model.hits + 1,
                   }
-                }
                 WrongKey => { ..model, miss: model.miss + 1 }
                 CorrectKey =>
                   {
                     ..model,
-                    typing_session: Some({ ..session, roman_state: next_state }),
+                    typing_session: Some({ ..session, kanji_state: next_state }),
                     hits: model.hits + 1,
                   }
               }
@@ -216,15 +205,12 @@ fn apply_typing_input(model : Model, value : String) -> Model {
         }
         { ..next_model, typing_input: "" }
       }
-    }
   }
 }
 
 ///|
 fn start_session(model : Model) -> (@cmd.Cmd[Msg], Model) {
-  let (queue, next_index) = try {
-    build_word_queue(model.next_word_index, 10)
-  } catch {
+  let (queue, next_index) = build_word_queue(model.next_word_index, 10) catch {
     _ => ([], model.next_word_index)
   }
   let typing_session = init_session_from_queue(queue)
@@ -242,7 +228,7 @@ fn start_session(model : Model) -> (@cmd.Cmd[Msg], Model) {
       next_word_index: next_index,
       typing_session,
       awaiting_space: false,
-      completed_kana: "",
+      completed_display: "",
       completed_roman: "",
       hits: 0,
       miss: 0,
@@ -252,10 +238,10 @@ fn start_session(model : Model) -> (@cmd.Cmd[Msg], Model) {
 
 ///|
 fn advance_to_next_word(model : Model) -> Model {
-  let mut completed_kana = model.completed_kana
+  let mut completed_display = model.completed_display
   let mut completed_roman = model.completed_roman
   if model.word_queue.length() > 1 {
-    completed_kana += " "
+    completed_display += " "
     completed_roman += " "
   }
   let (queue, next_index) = advance_word_queue(
@@ -269,7 +255,7 @@ fn advance_to_next_word(model : Model) -> Model {
     next_word_index: next_index,
     typing_session,
     awaiting_space: false,
-    completed_kana,
+    completed_display,
     completed_roman,
   }
 }

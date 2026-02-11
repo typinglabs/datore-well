@@ -26,7 +26,11 @@ pub fn calc_score(input : ScoreInput) -> Score {
 }
 
 ///|
-pub fn calc_score_from(correct_keys : Int, mistakes : Int, elapsed_ms : Int) -> Score {
+pub fn calc_score_from(
+  correct_keys : Int,
+  mistakes : Int,
+  elapsed_ms : Int,
+) -> Score {
   calc_score({ correct_keys, mistakes, elapsed_ms })
 }
 

@@ -1,0 +1,11 @@
+import {
+  "Yoorkin/rabbit-tea" @tea,
+  "Yoorkin/rabbit-tea/cmd",
+  "Yoorkin/rabbit-tea/html",
+  "typinglabs/romaji_typing",
+  "typinglabs/datore_well/typing" @typing,
+}
+
+options(
+  "is-main": true,
+)

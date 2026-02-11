@@ -2,7 +2,8 @@
   "name": "typinglabs/datore_well",
   "version": "0.0.1",
   "deps": {
-    "Yoorkin/rabbit-tea": "0.10.11"
+    "Yoorkin/rabbit-tea": "0.10.11",
+    "typinglabs/romaji_typing": "0.0.2"
   },
   "source": "src",
   "preferred-target": "js"

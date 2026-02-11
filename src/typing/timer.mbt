@@ -59,7 +59,11 @@ pub fn remaining_ms(timer : Timer) -> Int {
     0
   } else {
     let remaining = timer.limit_ms - timer.elapsed_ms
-    if remaining < 0 { 0 } else { remaining }
+    if remaining < 0 {
+      0
+    } else {
+      remaining
+    }
   }
 }
 
