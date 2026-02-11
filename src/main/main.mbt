@@ -242,7 +242,7 @@ fn advance_to_next_word(model : Model) -> Model {
   let mut completed_display = model.completed_display
   let mut completed_roman = model.completed_roman
   if model.word_queue.length() > 1 {
-    completed_display += " "
+    completed_display += " "
     completed_roman += " "
   }
   let (queue, next_index) = advance_word_queue(
