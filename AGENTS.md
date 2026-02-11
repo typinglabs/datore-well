@@ -6,6 +6,10 @@
   - `docs/datore-specification.md`: Source word data specification.
   - `docs/design.md`: Design decisions and constraints.
   - `docs/tasks.md`: Task backlog.
+  - `docs/tech_debt.md`: Tech debt notes and refactoring direction.
+- `src/main/`: Main application UI.
+  - `src/main/view.mbt`: Shared view helpers (header and word display).
+  - `src/style.css`: Tailwind `@theme` variables and minimal base rules.
 - `todo_cli/`: Moonbit learning project (CLI).
   - `todo_cli/todo_cli.mbt`: CLI entrypoint and tests.
   - `todo_cli/todo/`: Core domain logic.
@@ -20,6 +24,7 @@
 ## Coding Style & Naming Conventions
 - Language: Moonbit for application code.
 - UI styling: Tailwind CSS (keep class usage minimal and layout-focused).
+- Avoid arbitrary values in Tailwind classes when possible; prefer theme tokens and standard scales.
 - Indentation: 2 spaces for Markdown and configuration files unless a tool dictates otherwise.
 - Naming: use clear, descriptive, lowercase filenames (e.g., `todo_cli.mbt`, `word_filter.mbt`).
 
