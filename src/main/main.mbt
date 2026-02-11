@@ -55,17 +55,17 @@ let model : Model = {
 
 ///|
 enum Msg {
-  Start
-  StartFromInput(String)
-  GoTitle
-  GoResult
+  // Top
   SelectTime(Int)
   SelectCategory(Category)
   UpdateFilter(String)
+  StartFromInput(String)
+  // Playing
   UpdateTyping(String)
-  StartTyping
-  StopTyping
+  // StartTyping
   Tick
+  // Result
+  GoTitle
 }
 
 ///|
@@ -79,20 +79,7 @@ fn schedule_tick(ms : Int) -> @cmd.Cmd[Msg] {
 ///|
 fn update(msg : Msg, model : Model) -> (@cmd.Cmd[Msg], Model) {
   match msg {
-    Start => start_session(model)
-    StartFromInput(value) =>
-      if model.screen == Top && value != "" {
-        let (cmd, started_model) = start_session(model)
-        (cmd, apply_typing_input(started_model, value))
-      } else {
-        (@cmd.none(), model)
-      }
-    GoTitle =>
-      (
-        @cmd.none(),
-        { ..model, screen: Top, is_typing_active: false, is_input_ready: true },
-      )
-    GoResult => (@cmd.none(), { ..model, screen: Result })
+    // Home
     SelectTime(value) =>
       (
         @cmd.none(),
@@ -100,27 +87,15 @@ fn update(msg : Msg, model : Model) -> (@cmd.Cmd[Msg], Model) {
       )
     SelectCategory(value) => (@cmd.none(), { ..model, category: value })
     UpdateFilter(value) => (@cmd.none(), { ..model, filter: value })
-    UpdateTyping(value) => (@cmd.none(), apply_typing_input(model, value))
-    StartTyping =>
-      if model.screen == Top {
-        (@cmd.none(), { ..model, is_input_ready: true })
+    StartFromInput(value) =>
+      if model.screen == Top && value != "" {
+        let (cmd, started_model) = start_session(model)
+        (cmd, apply_typing_input(started_model, value))
       } else {
-        let typing_session = match model.typing_session {
-          Some(_) => model.typing_session
-          None => init_session_from_queue(model.word_queue)
-        }
-        (
-          @cmd.none(),
-          {
-            ..model,
-            is_typing_active: true,
-            is_input_ready: true,
-            typing_input: "",
-            typing_session,
-          },
-        )
+        (@cmd.none(), model)
       }
-    StopTyping => (@cmd.none(), { ..model, is_typing_active: false })
+    // Typing
+    UpdateTyping(value) => (@cmd.none(), apply_typing_input(model, value))
     Tick =>
       if model.screen != Playing {
         (@cmd.none(), model)
@@ -144,6 +119,12 @@ fn update(msg : Msg, model : Model) -> (@cmd.Cmd[Msg], Model) {
           )
         }
       }
+    // Result
+    GoTitle =>
+      (
+        @cmd.none(),
+        { ..model, screen: Top, is_typing_active: false, is_input_ready: true },
+      )
   }
 }
 

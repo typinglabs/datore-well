@@ -85,7 +85,7 @@ fn top_screen(model : Model) -> @html.Html[Msg] {
           ]),
         ]),
         div(class="typing-center", [
-          div(class="input-zone typing-zone relative", click=StartTyping, [
+          div(class="input-zone typing-zone relative", [
             input(
               id="typing-input",
               class="absolute inset-0 opacity-0 z-10",
