@@ -1,4 +1,51 @@
 ///|
+fn format_timer(timer : Timer) -> String {
+  let total_seconds = remaining_ms(timer) / 1000
+  let minutes = total_seconds / 60
+  let seconds = total_seconds % 60
+  [minutes.to_string().pad_start(2, '0'), seconds.to_string().pad_start(2, '0')].join(
+    ":",
+  )
+}
+
+///|
+test "format_timer" {
+  let timer = @typing.create_timer(60 * 1000)
+  assert_eq(format_timer(timer), "01:00")
+  let timer = @typing.create_timer(55 * 1000)
+  assert_eq(format_timer(timer), "00:55")
+  let timer = @typing.create_timer(8 * 1000)
+  assert_eq(format_timer(timer), "00:08")
+}
+
+///|
+fn typing_state(model : Model) -> (String, String, String, String) {
+  // SessionがNoneになるのは、主にワードを打ち終わっている場合
+  let (typed_display, remaining_display, typed_roman, remaining_roman) = match
+    model.typing_session {
+    None => ("", "", "", "")
+    Some(session) =>
+      (
+        try! session.word.display[:][0:session.kanji_state.typed_kanji_len].to_string(),
+        try! session.word.display[:][session.kanji_state.typed_kanji_len:].to_string(),
+        session.kanji_state.typed_romaji,
+        session.kanji_state.remaining_romaji,
+      )
+  }
+  let kana_left = model.completed_display + typed_display
+  let roman_left = model.completed_roman + typed_roman
+  let kana_right = [
+    remaining_display,
+    ..model.word_queue[1:].map(word => word.display),
+  ].join(" ")
+  let roman_right = [
+    remaining_roman,
+    ..model.word_queue[1:].map(word => word.roman),
+  ].join(" ")
+  (kana_left, kana_right, roman_left, roman_right)
+}
+
+///|
 fn playing_screen(model : Model) -> @html.Html[Msg] {
   let (kana_left, kana_right, roman_left, roman_right) = typing_state(model)
   let cursor_class = if model.is_typing_active {
@@ -38,7 +85,7 @@ fn playing_screen(model : Model) -> @html.Html[Msg] {
               id="typing-input",
               class="absolute inset-0 opacity-0 z-10",
               value=model.typing_input,
-              input=UpdateTyping(_),
+              input=x => UpdateTyping(x),
             ),
             div(class="baseline pointer-events-none", [
               div(class="row", [
@@ -66,84 +113,3 @@ fn playing_screen(model : Model) -> @html.Html[Msg] {
     ]),
   ])
 }
-
-///|
-fn format_timer(timer : Timer) -> String {
-  let total_seconds = remaining_ms(timer) / 1000
-  let minutes = total_seconds / 60
-  let seconds = total_seconds % 60
-  let minute_text = if minutes < 10 {
-    "0" + minutes.to_string()
-  } else {
-    minutes.to_string()
-  }
-  let second_text = if seconds < 10 {
-    "0" + seconds.to_string()
-  } else {
-    seconds.to_string()
-  }
-  minute_text + ":" + second_text
-}
-
-///|
-fn typing_state(model : Model) -> (String, String, String, String) {
-  let display = match model.typing_session {
-    Some(session) => session.word.display
-    _ => ""
-  }
-  let (typed_display, remaining_display, typed_roman, remaining_roman) = match
-    model.typing_session {
-    None => ("", "", "", "")
-    Some(session) =>
-      (
-        try! display[:][0:session.kanji_state.typed_kanji_len].to_string(),
-        try! display[:][session.kanji_state.typed_kanji_len:].to_string(),
-        session.kanji_state.typed_romaji,
-        session.kanji_state.remaining_romaji,
-      )
-  }
-  let kana_left = model.completed_display + typed_display
-  let roman_left = model.completed_roman + typed_roman
-  let (kana_tail, roman_tail) = future_tail(model.word_queue)
-  let kana_right = join_right_with_sep(remaining_display, kana_tail, " ")
-  let roman_right = join_right_with_sep(remaining_roman, roman_tail, " ")
-  (kana_left, kana_right, roman_left, roman_right)
-}
-
-///|
-fn future_tail(queue : Array[WordItem]) -> (String, String) {
-  if queue.length() <= 1 {
-    return ("", "")
-  }
-  let mut kana = ""
-  let mut roman = ""
-  let mut first = true
-  for item in queue[1:queue.length()] {
-    if first {
-      first = false
-    } else {
-      kana += " "
-      roman += " "
-    }
-    kana += item.display
-    roman += item.roman
-  }
-  (kana, roman)
-}
-
-///|
-fn join_right_with_sep(current : String, tail : String, sep : String) -> String {
-  if current == "" {
-    if tail == "" {
-      ""
-    } else {
-      sep + tail
-    }
-  } else if tail == "" {
-    current
-  } else {
-    current + sep + tail
-  }
-}
-
-///|
