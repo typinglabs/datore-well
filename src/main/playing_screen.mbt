@@ -60,13 +60,7 @@ fn playing_screen(model : Model) -> @html.Html[Msg] {
   }
   div(class="mx-auto flex w-full max-w-5xl flex-col gap-8", [
     section(class="pt-2", [
-      div(class="flex flex-wrap items-center justify-between gap-4", [
-        button(
-          class="cursor-pointer bg-transparent text-lg font-semibold uppercase tracking-widest",
-          click=GoTitle,
-          [text("打トレ単語練習")],
-        ),
-      ]),
+      app_header(None),
       div(class="mt-6 border-t border-ink/25", []),
       div(class="relative mt-6", [
         div(class="absolute right-0 top-0 z-[1] flex items-center gap-6", [
@@ -83,55 +77,15 @@ fn playing_screen(model : Model) -> @html.Html[Msg] {
             p(class="mt-2 text-lg", [text(model.miss.to_string())]),
           ]),
         ]),
-        div(
-          class="pointer-events-none fixed left-1/2 top-1/2 flex w-full max-w-5xl -translate-x-1/2 -translate-y-1/2 -mt-6 items-center justify-center px-6",
-          [
-            div(class=zone_class + " pointer-events-auto", [
-              input(
-                id="typing-input",
-                class="absolute inset-0 opacity-0 z-10",
-                value=model.typing_input,
-                input=x => UpdateTyping(x),
-              ),
-              div(
-                class="pointer-events-none grid w-full min-w-0 gap-1.5 text-2xl leading-loose",
-                [
-                  div(class="w-full min-w-0", [
-                    div(
-                      class="flex w-full min-w-0 items-baseline whitespace-pre text-3xl tracking-widest",
-                      [
-                        div(
-                          class="flex min-w-0 flex-1 justify-end overflow-hidden whitespace-nowrap text-ink",
-                          [span(class="whitespace-pre", [text(kana_left)])],
-                        ),
-                        span(class=cursor_class + " shrink-0", []),
-                        span(
-                          class="block min-w-0 flex-1 overflow-hidden whitespace-pre text-left text-ink/50 text-clip",
-                          [text(kana_right)],
-                        ),
-                      ],
-                    ),
-                  ]),
-                  div(class="w-full min-w-0", [
-                    div(
-                      class="flex w-full min-w-0 items-baseline whitespace-pre font-mono text-xl",
-                      [
-                        div(
-                          class="flex min-w-0 flex-1 justify-end overflow-hidden whitespace-nowrap text-ink",
-                          [span(class="whitespace-pre", [text(roman_left)])],
-                        ),
-                        span(class=cursor_class + " shrink-0", []),
-                        span(
-                          class="block min-w-0 flex-1 overflow-hidden whitespace-pre text-left text-ink/50 text-clip",
-                          [text(roman_right)],
-                        ),
-                      ],
-                    ),
-                  ]),
-                ],
-              ),
-            ]),
-          ],
+        word_display(
+          model.typing_input,
+          x => UpdateTyping(x),
+          cursor_class,
+          zone_class,
+          kana_left,
+          kana_right,
+          roman_left,
+          roman_right,
         ),
       ]),
     ]),

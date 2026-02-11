@@ -62,7 +62,6 @@ enum Msg {
   StartFromInput(String)
   // Playing
   UpdateTyping(String)
-  // StartTyping
   Tick
   // Result
   GoTitle
