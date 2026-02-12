@@ -8,7 +8,7 @@ struct WordItem {
 ///|
 fn init_datore_items() -> Array[WordItem] {
   let items : Array[WordItem] = []
-  for word in @typing.datore_words() {
+  for word in @util.datore_words() {
     let result = try {
       let (kanji_state, _apply_key) = @romaji_typing.create_kanji_engine(
         word.text,

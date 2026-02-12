@@ -10,11 +10,11 @@ fn format_timer(timer : Timer) -> String {
 
 ///|
 test "format_timer" {
-  let timer = @typing.create_timer(60 * 1000)
+  let timer = @util.create_timer(60 * 1000)
   assert_eq(format_timer(timer), "01:00")
-  let timer = @typing.create_timer(55 * 1000)
+  let timer = @util.create_timer(55 * 1000)
   assert_eq(format_timer(timer), "00:55")
-  let timer = @typing.create_timer(8 * 1000)
+  let timer = @util.create_timer(8 * 1000)
   assert_eq(format_timer(timer), "00:08")
 }
 
