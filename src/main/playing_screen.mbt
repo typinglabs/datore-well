@@ -19,7 +19,7 @@ test "format_timer" {
 }
 
 ///|
-fn typing_state(model : Model) -> (String, String, String, String) {
+fn typing_state(model : TypingModel) -> (String, String, String, String) {
   // SessionがNoneになるのは、主にワードを打ち終わっている場合
   let (typed_display, remaining_display, typed_roman, remaining_roman) = match
     model.typing_session {
@@ -46,7 +46,7 @@ fn typing_state(model : Model) -> (String, String, String, String) {
 }
 
 ///|
-fn playing_screen(model : Model) -> @html.Html[Msg] {
+fn playing_screen(model : TypingModel) -> @html.Html[Msg] {
   let (kana_left, kana_right, roman_left, roman_right) = typing_state(model)
   let cursor_class = if model.is_typing_active {
     "h-6 w-0.5 self-center justify-self-center bg-ink"

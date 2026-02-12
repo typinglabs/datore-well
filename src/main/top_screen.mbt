@@ -1,5 +1,5 @@
 ///|
-fn time_button(model : Model, value : Int) -> @html.Html[Msg] {
+fn time_button(model : TopModel, value : Int) -> @html.Html[Msg] {
   let base = "cursor-pointer bg-ink/5 px-2 py-0.5 text-xs"
   let class_name = if model.time_seconds == value {
     base + " font-semibold"
@@ -11,7 +11,7 @@ fn time_button(model : Model, value : Int) -> @html.Html[Msg] {
 
 ///|
 fn category_button(
-  model : Model,
+  model : TopModel,
   value : Category,
   label : String,
 ) -> @html.Html[Msg] {
@@ -27,14 +27,14 @@ fn category_button(
 ///|
 fn top_preview_state() -> (String, String, String, String) {
   // ここでワード生成するとダメだと思う
-  let (queue, _) = build_word_queue(0, 10) catch { _ => ([], 0) }
+  let queue = build_word_queue(10)
   let kana_right = queue.map(item => item.display).join(" ")
   let roman_right = queue.map(item => item.roman).join(" ")
   ("", kana_right, "", roman_right)
 }
 
 ///|
-fn top_screen(model : Model) -> @html.Html[Msg] {
+fn top_screen(model : TopModel) -> @html.Html[Msg] {
   let (kana_left, kana_right, roman_left, roman_right) = top_preview_state()
   let cursor_class = if model.is_input_ready {
     "h-6 w-0.5 self-center justify-self-center bg-ink"

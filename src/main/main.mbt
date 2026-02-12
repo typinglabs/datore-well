@@ -1,11 +1,4 @@
 ///|
-enum Screen {
-  Top
-  Playing
-  Result
-} derive(Show, Eq)
-
-///|
 enum Category {
   All
   Kanji
@@ -14,43 +7,80 @@ enum Category {
 } derive(Show, Eq)
 
 ///|
-struct Model {
-  screen : Screen
+struct TopModel {
+  // フォーム
   time_seconds : Int
-  timer : Timer
   category : Category
   filter : String
+  // タイピング
   typing_input : String
+  // フラグ
   is_typing_active : Bool
   is_input_ready : Bool
-  next_word_index : Int
+}
+
+///|
+struct TypingModel {
+  // フォーム
+  time_seconds : Int
+  category : Category
+  filter : String
+  // タイマー
+  timer : Timer
+  typing_input : String
+  // フラグ
+  is_typing_active : Bool
+  // ワード
   word_queue : Array[WordItem]
+  // タイピング情報
   typing_session : TypingSession?
   awaiting_space : Bool
+  // 入力済み
   completed_display : String
   completed_roman : String
+  // 打鍵数とミス数
   hits : Int
   miss : Int
 }
 
 ///|
-let model : Model = {
-  screen: Top,
-  time_seconds: 60,
-  timer: create_timer(60 * 1000),
-  category: All,
-  filter: "",
-  typing_input: "",
-  is_typing_active: false,
-  is_input_ready: true,
-  next_word_index: 0,
-  word_queue: [],
-  typing_session: None,
-  awaiting_space: false,
-  completed_display: "",
-  completed_roman: "",
-  hits: 0,
-  miss: 0,
+struct ResultModel {
+  // フォーム
+  time_seconds : Int
+  category : Category
+  filter : String
+  // タイマー
+  timer : Timer
+  // 打鍵数、ミス数
+  hits : Int
+  miss : Int
+}
+
+///|
+enum NewScreen {
+  Top(TopModel)
+  Typing(TypingModel)
+  Result(ResultModel)
+}
+
+///|
+struct NewModel {
+  screen : NewScreen
+  // TODO: フォームのデータをここに移動する
+  form : String
+}
+
+///|
+let model : NewModel = {
+  screen: Top({
+    time_seconds: 60,
+    category: All,
+    filter: "",
+    typing_input: "",
+    is_typing_active: false,
+    is_input_ready: true,
+  }),
+  form: "",
 }
 
 ///|
@@ -76,54 +106,99 @@ fn schedule_tick(ms : Int) -> @cmd.Cmd[Msg] {
 }
 
 ///|
-fn update(msg : Msg, model : Model) -> (@cmd.Cmd[Msg], Model) {
-  match msg {
-    // Home
-    SelectTime(value) =>
+fn update(msg : Msg, model : NewModel) -> (@cmd.Cmd[Msg], NewModel) {
+  match (msg, model.screen) {
+    // Top
+    (SelectTime(value), Top(top_model)) =>
       (
         @cmd.none(),
-        { ..model, time_seconds: value, timer: create_timer(value * 1000) },
+        { ..model, screen: Top({ ..top_model, time_seconds: value }) },
       )
-    SelectCategory(value) => (@cmd.none(), { ..model, category: value })
-    UpdateFilter(value) => (@cmd.none(), { ..model, filter: value })
-    StartFromInput(value) =>
-      if model.screen == Top && value != "" {
-        let (cmd, started_model) = start_session(model)
-        (cmd, apply_typing_input(started_model, value))
+    (SelectCategory(value), Top(top_model)) =>
+      (@cmd.none(), { ..model, screen: Top({ ..top_model, category: value }) })
+    (UpdateFilter(value), Top(top_model)) =>
+      (@cmd.none(), { ..model, screen: Top({ ..top_model, filter: value }) })
+    (StartFromInput(value), Top(top_model)) =>
+      if value != "" {
+        let (cmd, started_model) = start_session(top_model)
+        (
+          cmd,
+          { ..model, screen: Typing(apply_typing_input(started_model, value)) },
+        )
       } else {
         (@cmd.none(), model)
       }
     // Typing
-    UpdateTyping(value) => (@cmd.none(), apply_typing_input(model, value))
-    Tick =>
-      if model.screen != Playing {
-        (@cmd.none(), model)
-      } else {
-        let next_timer = tick_timer(model.timer, 1000)
-        let next_model = {
-          ..model,
-          timer: next_timer,
-          is_typing_active: if is_finished(next_timer) {
-            false
-          } else {
-            model.is_typing_active
-          },
-        }
-        if !is_finished(next_timer) {
-          (schedule_tick(1000), next_model)
-        } else {
-          (
-            @cmd.none(),
-            { ..next_model, screen: Result, is_typing_active: false },
-          )
-        }
-      }
-    // Result
-    GoTitle =>
+    (UpdateTyping(value), Typing(typing_model)) =>
       (
         @cmd.none(),
-        { ..model, screen: Top, is_typing_active: false, is_input_ready: true },
+        { ..model, screen: Typing(apply_typing_input(typing_model, value)) },
       )
+    (Tick, Typing(typing_model)) => {
+      let next_timer = tick_timer(typing_model.timer, 1000)
+      let next_model = {
+        ..typing_model,
+        timer: next_timer,
+        is_typing_active: if is_finished(next_timer) {
+          false
+        } else {
+          typing_model.is_typing_active
+        },
+      }
+      if !is_finished(next_timer) {
+        (schedule_tick(1000), { ..model, screen: Typing(next_model) })
+      } else {
+        (@cmd.none(), { ..model, screen: Result(typing_to_result(next_model)) })
+      }
+    }
+    // Result / Common
+    (GoTitle, screen) =>
+      (@cmd.none(), { ..model, screen: Top(to_top_model(screen)) })
+    (SelectTime(value), Typing(typing_model)) =>
+      (
+        @cmd.none(),
+        {
+          ..model,
+          screen: Typing({
+            ..typing_model,
+            time_seconds: value,
+            timer: create_timer(value * 1000),
+          }),
+        },
+      )
+    (SelectTime(value), Result(result_model)) =>
+      (
+        @cmd.none(),
+        {
+          ..model,
+          screen: Result({
+            ..result_model,
+            time_seconds: value,
+            timer: create_timer(value * 1000),
+          }),
+        },
+      )
+    (SelectCategory(value), Typing(typing_model)) =>
+      (
+        @cmd.none(),
+        { ..model, screen: Typing({ ..typing_model, category: value }) },
+      )
+    (SelectCategory(value), Result(result_model)) =>
+      (
+        @cmd.none(),
+        { ..model, screen: Result({ ..result_model, category: value }) },
+      )
+    (UpdateFilter(value), Typing(typing_model)) =>
+      (
+        @cmd.none(),
+        { ..model, screen: Typing({ ..typing_model, filter: value }) },
+      )
+    (UpdateFilter(value), Result(result_model)) =>
+      (
+        @cmd.none(),
+        { ..model, screen: Result({ ..result_model, filter: value }) },
+      )
+    (_, _) => (@cmd.none(), model)
   }
 }
 
@@ -156,7 +231,45 @@ fn init_session_from_queue(queue : Array[WordItem]) -> TypingSession? {
 }
 
 ///|
-fn apply_typing_input(model : Model, value : String) -> Model {
+fn typing_to_result(model : TypingModel) -> ResultModel {
+  {
+    time_seconds: model.time_seconds,
+    category: model.category,
+    filter: model.filter,
+    timer: model.timer,
+    hits: model.hits,
+    miss: model.miss,
+  }
+}
+
+///|
+fn to_top_model(screen : NewScreen) -> TopModel {
+  match screen {
+    Top(top_model) =>
+      { ..top_model, is_typing_active: false, is_input_ready: true }
+    Typing(typing_model) =>
+      {
+        time_seconds: typing_model.time_seconds,
+        category: typing_model.category,
+        filter: typing_model.filter,
+        typing_input: "",
+        is_typing_active: false,
+        is_input_ready: true,
+      }
+    Result(result_model) =>
+      {
+        time_seconds: result_model.time_seconds,
+        category: result_model.category,
+        filter: result_model.filter,
+        typing_input: "",
+        is_typing_active: false,
+        is_input_ready: true,
+      }
+  }
+}
+
+///|
+fn apply_typing_input(model : TypingModel, value : String) -> TypingModel {
   if !model.is_typing_active {
     return { ..model, typing_input: value }
   }
@@ -209,23 +322,20 @@ fn apply_typing_input(model : Model, value : String) -> Model {
 }
 
 ///|
-fn start_session(model : Model) -> (@cmd.Cmd[Msg], Model) {
-  let (queue, next_index) = build_word_queue(model.next_word_index, 10) catch {
-    _ => ([], model.next_word_index)
-  }
+fn start_session(model : TopModel) -> (@cmd.Cmd[Msg], TypingModel) {
+  let queue = build_word_queue(10)
   let typing_session = init_session_from_queue(queue)
   let timer = start_timer(create_timer(model.time_seconds * 1000))
   (
     schedule_tick(1000),
     {
-      ..model,
-      screen: Playing,
+      time_seconds: model.time_seconds,
+      category: model.category,
+      filter: model.filter,
       timer,
-      is_typing_active: true,
-      is_input_ready: true,
       typing_input: "",
+      is_typing_active: true,
       word_queue: queue,
-      next_word_index: next_index,
       typing_session,
       awaiting_space: false,
       completed_display: "",
@@ -237,22 +347,18 @@ fn start_session(model : Model) -> (@cmd.Cmd[Msg], Model) {
 }
 
 ///|
-fn advance_to_next_word(model : Model) -> Model {
+fn advance_to_next_word(model : TypingModel) -> TypingModel {
   let mut completed_display = model.completed_display
   let mut completed_roman = model.completed_roman
   if model.word_queue.length() > 1 {
     completed_display += " "
     completed_roman += " "
   }
-  let (queue, next_index) = advance_word_queue(
-    model.word_queue,
-    model.next_word_index,
-  )
+  let queue = advance_word_queue(model.word_queue)
   let typing_session = init_session_from_queue(queue)
   {
     ..model,
     word_queue: queue,
-    next_word_index: next_index,
     typing_session,
     awaiting_space: false,
     completed_display,
@@ -269,11 +375,11 @@ fn last_char(value : String) -> Char? {
 }
 
 ///|
-fn view(model : Model) -> @html.Html[Msg] {
+fn view(model : NewModel) -> @html.Html[Msg] {
   match model.screen {
-    Top => top_screen(model)
-    Playing => playing_screen(model)
-    Result => result_screen(model)
+    Top(top_model) => top_screen(top_model)
+    Typing(typing_model) => playing_screen(typing_model)
+    Result(result_model) => result_screen(result_model)
   }
 }
 
