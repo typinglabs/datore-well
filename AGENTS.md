@@ -27,8 +27,9 @@
 - Avoid arbitrary values in Tailwind classes when possible; prefer theme tokens and standard scales.
 - Indentation: 2 spaces for Markdown and configuration files unless a tool dictates otherwise.
 - Naming: use clear, descriptive, lowercase filenames (e.g., `todo_cli.mbt`, `word_filter.mbt`).
-- 1度しか呼ばないような細かい関数は、関数にしない。可視性の問題で変更、削除が難しくなるため。
-- 使用する値や関数は、使用するより前に定義する。
+- Moonbitのパッケージ可視性の制約上、1箇所でしか使わない小さな処理は関数化せず、呼び出し元に直接書く。後から変更・削除しやすくするため。
+- 宣言順は「定義が先、使用が後」を徹底する。値・関数ともに、参照する前に定義する。
+- プログラム全体で、可能な限り宣言的（`map`/`filter`/`join` など）に記述し、手続き的なループや可変状態の導入は必要な場合に限定する。
 
 ## Testing Guidelines
 - Use Moonbit `test "name" { ... }` blocks.

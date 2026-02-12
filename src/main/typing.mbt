@@ -14,7 +14,7 @@ struct TypingSession {
 }
 
 ///|
-fn init_session_from_queue(queue : Array[WordItem]) -> TypingSession? {
+fn init_session_from_queue(queue : @deque.Deque[WordItem]) -> TypingSession? {
   if queue.length() == 0 {
     None
   } else {

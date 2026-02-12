@@ -1,6 +1,5 @@
 ///|
 struct WordItem {
-  id : Int
   annotated : String
   display : String
   roman : String
@@ -9,24 +8,7 @@ struct WordItem {
 }
 
 ///|
-struct Lcg {
-  state : Int
-}
-
-///|
-fn lcg_next(rng : Lcg) -> (Lcg, Int) {
-  let next = (rng.state * 1664525 + 1013904223) & 0x7fffffff
-  ({ state: next }, next)
-}
-
-///|
-fn copy_word_items(words : Array[WordItem]) -> Array[WordItem] {
-  let result : Array[WordItem] = []
-  for word in words {
-    result.push(word)
-  }
-  result
-}
+let queue_rng : @random.Rand = @random.Rand::new()
 
 ///|
 fn is_hiragana(ch : Char) -> Bool {
@@ -90,14 +72,12 @@ fn build_kana_from_annotated(annotated : String) -> String {
 fn init_all_items() -> Array[WordItem] {
   let items : Array[WordItem] = []
   let words = @util.datore_words()
-  for i = 0; i < words.length(); i = i + 1 {
-    let word = words[i]
+  for word in words {
     let result = try {
       let (kanji_state, _apply_key) = @romaji_typing.create_kanji_engine(
         word.text,
       )
       Some({
-        id: i,
         annotated: word.text,
         display: kanji_state.display,
         roman: kanji_state.remaining_romaji,
@@ -120,8 +100,7 @@ let all_items : Array[WordItem] = init_all_items()
 
 ///|
 fn filter_words(category : Category, filter : String) -> Array[WordItem] {
-  let result : Array[WordItem] = []
-  for word in all_items {
+  all_items.filter(word => {
     let allowed = match (category, word.kind) {
       (All, _) => true
       (Kanji, @util.Kanji) => true
@@ -129,74 +108,58 @@ fn filter_words(category : Category, filter : String) -> Array[WordItem] {
       (Hiragana, @util.Hiragana) => true
       (_, _) => false
     }
-    if allowed && (filter == "" || word.kana.contains(filter)) {
-      result.push(word)
-    }
-  }
-  result
+    allowed && (filter == "" || word.kana.contains(filter))
+  })
 }
 
 ///|
 fn shuffle_word_items(words : Array[WordItem], seed : Int) -> Array[WordItem] {
-  let result = copy_word_items(words)
-  let mut rng = { state: seed }
+  let result = words.copy()
+  let rng = @random.Rand::chacha8(
+    seed=Bytes::makei(32, i => ((seed + i * 31) & 0xff).to_byte()),
+  )
   if result.length() <= 1 {
     return result
   }
-  for i = result.length() - 1; i > 0; i = i - 1 {
-    let (next_rng, value) = lcg_next(rng)
-    rng = next_rng
-    let j = value % (i + 1)
+  rng.shuffle(result.length(), (i, j) => {
     let temp = result[i]
     result[i] = result[j]
     result[j] = temp
-  }
+  })
   result
 }
 
 ///|
-fn build_word_queue(words : Array[WordItem], size : Int) -> Array[WordItem] {
+fn build_word_queue(
+  words : Array[WordItem],
+  size : Int,
+) -> @deque.Deque[WordItem] {
   if words.length() == 0 {
-    return []
+    return @deque.new()
   }
-  let queue : Array[WordItem] = []
+  let queue : @deque.Deque[WordItem] = @deque.new()
   let mut index = 0
   for _i = 0; _i < size; _i = _i + 1 {
-    queue.push(words[index])
+    queue.push_back(words[index])
     index = (index + 1) % words.length()
   }
   queue
 }
 
 ///|
-fn find_word_index(words : Array[WordItem], target : WordItem) -> Int? {
-  for i = 0; i < words.length(); i = i + 1 {
-    let word = words[i]
-    if word.id == target.id {
-      return Some(i)
-    }
-  }
-  None
-}
-
-///|
 fn advance_word_queue(
   words : Array[WordItem],
-  queue : Array[WordItem],
-) -> Array[WordItem] {
+  queue : @deque.Deque[WordItem],
+) -> @deque.Deque[WordItem] {
   if words.length() == 0 {
-    return []
+    return @deque.new()
   }
   if queue.length() == 0 {
     return build_word_queue(words, 10)
   }
-  let next_queue = queue[1:queue.length()].to_array()
-  let last_word = queue[queue.length() - 1]
-  let next_index = match find_word_index(words, last_word) {
-    None => 0
-    Some(index) => (index + 1) % words.length()
-  }
-  let word = words[next_index]
-  next_queue.push(word)
+  let next_queue = queue.copy()
+  ignore(next_queue.pop_front())
+  let next_index = queue_rng.int(limit=words.length())
+  next_queue.push_back(words[next_index])
   next_queue
 }

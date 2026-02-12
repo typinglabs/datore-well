@@ -19,7 +19,7 @@ struct TypingModel {
   typing_input : String
   is_typing_active : Bool
   filtered_words : Array[WordItem]
-  word_queue : Array[WordItem]
+  word_queue : @deque.Deque[WordItem]
   typing_session : TypingSession?
   awaiting_space : Bool
   completed_display : String
@@ -143,32 +143,30 @@ fn update(msg : Msg, model : Model) -> (@cmd.Cmd[Msg], Model) {
     // Top
     (SelectTime(value), Top(_)) =>
       (@cmd.none(), { ..model, form: { ..model.form, time_seconds: value } })
-    (SelectCategory(value), Top(top_model)) => {
-      let filtered_words = filter_words(value, model.form.filter)
+    (SelectCategory(value), Top(top_model)) =>
       (
         @cmd.none(),
         {
           form: { ..model.form, category: value },
           screen: Top({
             ..top_model,
-            filtered_words: filtered_words |> shuffle_word_items(1),
+            filtered_words: filter_words(value, model.form.filter)
+            |> shuffle_word_items(1),
           }),
         },
       )
-    }
-    (UpdateFilter(value), Top(top_model)) => {
-      let filtered_words = filter_words(model.form.category, value)
+    (UpdateFilter(value), Top(top_model)) =>
       (
         @cmd.none(),
         {
           form: { ..model.form, filter: value },
           screen: Top({
             ..top_model,
-            filtered_words: filtered_words |> shuffle_word_items(1),
+            filtered_words: filter_words(model.form.category, value)
+            |> shuffle_word_items(1),
           }),
         },
       )
-    }
     (StartFromInput(value), Top(top_model)) =>
       if value != "" && top_model.filtered_words.length() > 0 {
         let (cmd, typing_model) = start_session(

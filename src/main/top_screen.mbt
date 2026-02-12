@@ -33,8 +33,9 @@ fn top_preview_state(
     return ("", "", "", "")
   }
   let queue = build_word_queue(words, 10)
-  let kana_right = queue.map(item => item.display).join(" ")
-  let roman_right = queue.map(item => item.roman).join(" ")
+  let queue_array = queue.to_array()
+  let kana_right = queue_array.map(item => item.display).join(" ")
+  let roman_right = queue_array.map(item => item.roman).join(" ")
   ("", kana_right, "", roman_right)
 }
 

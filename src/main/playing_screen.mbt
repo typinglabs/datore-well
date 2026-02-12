@@ -34,14 +34,9 @@ fn typing_state(model : TypingModel) -> (String, String, String, String) {
   }
   let kana_left = model.completed_display + typed_display
   let roman_left = model.completed_roman + typed_roman
-  let kana_right = [
-    remaining_display,
-    ..model.word_queue[1:].map(word => word.display),
-  ].join(" ")
-  let roman_right = [
-    remaining_roman,
-    ..model.word_queue[1:].map(word => word.roman),
-  ].join(" ")
+  let queue = model.word_queue.to_array()
+  let kana_right = [remaining_display, ..queue[1:].map(word => word.display)].join(" ")
+  let roman_right = [remaining_roman, ..queue[1:].map(word => word.roman)].join(" ")
   (kana_left, kana_right, roman_left, roman_right)
 }
 
