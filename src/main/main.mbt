@@ -8,10 +8,6 @@ enum Category {
 
 ///|
 struct TopModel {
-  // フォーム
-  time_seconds : Int
-  category : Category
-  filter : String
   // タイピング
   typing_input : String
   // フラグ
@@ -21,12 +17,9 @@ struct TopModel {
 
 ///|
 struct TypingModel {
-  // フォーム
-  time_seconds : Int
-  category : Category
-  filter : String
   // タイマー
   timer : Timer
+  // タイピング
   typing_input : String
   // フラグ
   is_typing_active : Bool
@@ -45,10 +38,6 @@ struct TypingModel {
 
 ///|
 struct ResultModel {
-  // フォーム
-  time_seconds : Int
-  category : Category
-  filter : String
   // タイマー
   timer : Timer
   // 打鍵数、ミス数
@@ -57,30 +46,33 @@ struct ResultModel {
 }
 
 ///|
-enum NewScreen {
+enum Screen {
   Top(TopModel)
   Typing(TypingModel)
   Result(ResultModel)
 }
 
 ///|
-struct NewModel {
-  screen : NewScreen
-  // TODO: フォームのデータをここに移動する
-  form : String
+struct Form {
+  time_seconds : Int
+  category : Category
+  filter : String
 }
 
 ///|
-let model : NewModel = {
+struct Model {
+  screen : Screen
+  form : Form
+}
+
+///|
+let model : Model = {
   screen: Top({
-    time_seconds: 60,
-    category: All,
-    filter: "",
     typing_input: "",
     is_typing_active: false,
     is_input_ready: true,
   }),
-  form: "",
+  form: { time_seconds: 60, category: All, filter: "" },
 }
 
 ///|
@@ -106,21 +98,18 @@ fn schedule_tick(ms : Int) -> @cmd.Cmd[Msg] {
 }
 
 ///|
-fn update(msg : Msg, model : NewModel) -> (@cmd.Cmd[Msg], NewModel) {
+fn update(msg : Msg, model : Model) -> (@cmd.Cmd[Msg], Model) {
   match (msg, model.screen) {
     // Top
-    (SelectTime(value), Top(top_model)) =>
-      (
-        @cmd.none(),
-        { ..model, screen: Top({ ..top_model, time_seconds: value }) },
-      )
-    (SelectCategory(value), Top(top_model)) =>
-      (@cmd.none(), { ..model, screen: Top({ ..top_model, category: value }) })
-    (UpdateFilter(value), Top(top_model)) =>
-      (@cmd.none(), { ..model, screen: Top({ ..top_model, filter: value }) })
-    (StartFromInput(value), Top(top_model)) =>
+    (SelectTime(value), Top(_)) =>
+      (@cmd.none(), { ..model, form: { ..model.form, time_seconds: value } })
+    (SelectCategory(value), Top(_)) =>
+      (@cmd.none(), { ..model, form: { ..model.form, category: value } })
+    (UpdateFilter(value), Top(_)) =>
+      (@cmd.none(), { ..model, form: { ..model.form, filter: value } })
+    (StartFromInput(value), Top(_)) =>
       if value != "" {
-        let (cmd, started_model) = start_session(top_model)
+        let (cmd, started_model) = start_session(model.form)
         (
           cmd,
           { ..model, screen: Typing(apply_typing_input(started_model, value)) },
@@ -154,50 +143,6 @@ fn update(msg : Msg, model : NewModel) -> (@cmd.Cmd[Msg], NewModel) {
     // Result / Common
     (GoTitle, screen) =>
       (@cmd.none(), { ..model, screen: Top(to_top_model(screen)) })
-    (SelectTime(value), Typing(typing_model)) =>
-      (
-        @cmd.none(),
-        {
-          ..model,
-          screen: Typing({
-            ..typing_model,
-            time_seconds: value,
-            timer: create_timer(value * 1000),
-          }),
-        },
-      )
-    (SelectTime(value), Result(result_model)) =>
-      (
-        @cmd.none(),
-        {
-          ..model,
-          screen: Result({
-            ..result_model,
-            time_seconds: value,
-            timer: create_timer(value * 1000),
-          }),
-        },
-      )
-    (SelectCategory(value), Typing(typing_model)) =>
-      (
-        @cmd.none(),
-        { ..model, screen: Typing({ ..typing_model, category: value }) },
-      )
-    (SelectCategory(value), Result(result_model)) =>
-      (
-        @cmd.none(),
-        { ..model, screen: Result({ ..result_model, category: value }) },
-      )
-    (UpdateFilter(value), Typing(typing_model)) =>
-      (
-        @cmd.none(),
-        { ..model, screen: Typing({ ..typing_model, filter: value }) },
-      )
-    (UpdateFilter(value), Result(result_model)) =>
-      (
-        @cmd.none(),
-        { ..model, screen: Result({ ..result_model, filter: value }) },
-      )
     (_, _) => (@cmd.none(), model)
   }
 }
@@ -232,39 +177,18 @@ fn init_session_from_queue(queue : Array[WordItem]) -> TypingSession? {
 
 ///|
 fn typing_to_result(model : TypingModel) -> ResultModel {
-  {
-    time_seconds: model.time_seconds,
-    category: model.category,
-    filter: model.filter,
-    timer: model.timer,
-    hits: model.hits,
-    miss: model.miss,
-  }
+  { timer: model.timer, hits: model.hits, miss: model.miss }
 }
 
 ///|
-fn to_top_model(screen : NewScreen) -> TopModel {
+fn to_top_model(screen : Screen) -> TopModel {
   match screen {
     Top(top_model) =>
       { ..top_model, is_typing_active: false, is_input_ready: true }
-    Typing(typing_model) =>
-      {
-        time_seconds: typing_model.time_seconds,
-        category: typing_model.category,
-        filter: typing_model.filter,
-        typing_input: "",
-        is_typing_active: false,
-        is_input_ready: true,
-      }
-    Result(result_model) =>
-      {
-        time_seconds: result_model.time_seconds,
-        category: result_model.category,
-        filter: result_model.filter,
-        typing_input: "",
-        is_typing_active: false,
-        is_input_ready: true,
-      }
+    Typing(_) =>
+      { typing_input: "", is_typing_active: false, is_input_ready: true }
+    Result(_) =>
+      { typing_input: "", is_typing_active: false, is_input_ready: true }
   }
 }
 
@@ -322,16 +246,13 @@ fn apply_typing_input(model : TypingModel, value : String) -> TypingModel {
 }
 
 ///|
-fn start_session(model : TopModel) -> (@cmd.Cmd[Msg], TypingModel) {
+fn start_session(form : Form) -> (@cmd.Cmd[Msg], TypingModel) {
   let queue = build_word_queue(10)
   let typing_session = init_session_from_queue(queue)
-  let timer = start_timer(create_timer(model.time_seconds * 1000))
+  let timer = start_timer(create_timer(form.time_seconds * 1000))
   (
     schedule_tick(1000),
     {
-      time_seconds: model.time_seconds,
-      category: model.category,
-      filter: model.filter,
       timer,
       typing_input: "",
       is_typing_active: true,
@@ -375,9 +296,9 @@ fn last_char(value : String) -> Char? {
 }
 
 ///|
-fn view(model : NewModel) -> @html.Html[Msg] {
+fn view(model : Model) -> @html.Html[Msg] {
   match model.screen {
-    Top(top_model) => top_screen(top_model)
+    Top(top_model) => top_screen(top_model, model.form)
     Typing(typing_model) => playing_screen(typing_model)
     Result(result_model) => result_screen(result_model)
   }
