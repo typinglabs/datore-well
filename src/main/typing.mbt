@@ -38,7 +38,7 @@ fn advance_to_next_word(model : TypingModel) -> TypingModel {
     completed_display += " "
     completed_roman += " "
   }
-  let queue = advance_word_queue(model.word_queue)
+  let queue = advance_word_queue(model.filtered_words, model.word_queue)
   let typing_session = init_session_from_queue(queue)
   {
     ..model,
@@ -106,15 +106,17 @@ fn apply_typing_input(model : TypingModel, value : String) -> TypingModel {
 ///|
 fn start_session(
   form : Form,
+  filtered_words : Array[WordItem],
   first_key : String,
 ) -> (@cmd.Cmd[Msg], TypingModel) {
-  let queue = build_word_queue(10)
+  let queue = build_word_queue(filtered_words, 10)
   let typing_session = init_session_from_queue(queue)
   let timer = start_timer(create_timer(form.time_seconds * 1000))
   let model : TypingModel = {
     timer,
     typing_input: "",
     is_typing_active: true,
+    filtered_words,
     word_queue: queue,
     typing_session,
     awaiting_space: false,

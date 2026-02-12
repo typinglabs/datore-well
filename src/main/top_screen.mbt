@@ -1,6 +1,6 @@
 ///|
 fn time_button(form : Form, value : Int) -> @html.Html[Msg] {
-  let base = "cursor-pointer bg-ink/5 px-2 py-0.5 text-sm"
+  let base = "cursor-pointer bg-ink/5 px-2 py-0.5 text-xs"
   let class_name = if form.time_seconds == value {
     base + " font-semibold"
   } else {
@@ -15,7 +15,7 @@ fn category_button(
   value : Category,
   label : String,
 ) -> @html.Html[Msg] {
-  let base = "cursor-pointer bg-ink/5 px-2 py-0.5 text-sm"
+  let base = "cursor-pointer bg-ink/5 px-2 py-0.5 text-xs"
   let class_name = if form.category == value {
     base + " font-semibold"
   } else {
@@ -25,9 +25,9 @@ fn category_button(
 }
 
 ///|
-fn top_preview_state() -> (String, String, String, String) {
+fn top_preview_state(words : Array[WordItem]) -> (String, String, String, String) {
   // ここでワード生成するとダメだと思う
-  let queue = build_word_queue(10)
+  let queue = build_word_queue(words, 10)
   let kana_right = queue.map(item => item.display).join(" ")
   let roman_right = queue.map(item => item.roman).join(" ")
   ("", kana_right, "", roman_right)
@@ -35,11 +35,13 @@ fn top_preview_state() -> (String, String, String, String) {
 
 ///|
 fn top_screen(model : TopModel, form : Form) -> @html.Html[Msg] {
-  let (kana_left, kana_right, roman_left, roman_right) = top_preview_state()
+  let (kana_left, kana_right, roman_left, roman_right) = top_preview_state(
+    model.filtered_words,
+  )
   let cursor_class = if model.is_input_ready {
-    "h-7 w-0.5 self-center justify-self-center bg-ink"
+    "h-6 w-0.5 self-center justify-self-center bg-ink"
   } else {
-    "h-7 w-0.5 self-center justify-self-center bg-ink opacity-0"
+    "h-6 w-0.5 self-center justify-self-center bg-ink opacity-0"
   }
   let settings_class = if model.is_typing_active {
     "relative z-10 grid grid-cols-1 items-start gap-6 opacity-0 pointer-events-none md:grid-cols-3"

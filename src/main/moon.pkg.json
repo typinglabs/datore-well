@@ -1,7 +1,10 @@
 {
   "is-main": true,
   "import": [
-    { "path": "Yoorkin/rabbit-tea", "alias": "tea" },
+    {
+      "path": "Yoorkin/rabbit-tea",
+      "alias": "tea"
+    },
     "Yoorkin/rabbit-tea/cmd",
     "Yoorkin/rabbit-tea/html",
     "typinglabs/romaji_typing",

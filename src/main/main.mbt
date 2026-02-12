@@ -13,6 +13,8 @@ struct TopModel {
   // フラグ
   is_typing_active : Bool
   is_input_ready : Bool
+  // ワード
+  filtered_words : Array[WordItem]
 }
 
 ///|
@@ -24,6 +26,7 @@ struct TypingModel {
   // フラグ
   is_typing_active : Bool
   // ワード
+  filtered_words : Array[WordItem]
   word_queue : Array[WordItem]
   // タイピング情報
   typing_session : TypingSession?
@@ -66,12 +69,24 @@ struct Model {
 }
 
 ///|
-let model : Model = {
-  screen: Top({
+fn init_filtered_words(category : Category) -> Array[WordItem] {
+  let words = build_filtered_words_from_category(category)
+  shuffle_word_items(words, 1)
+}
+
+///|
+fn init_top_model(form : Form) -> TopModel {
+  {
     typing_input: "",
     is_typing_active: false,
     is_input_ready: true,
-  }),
+    filtered_words: init_filtered_words(form.category),
+  }
+}
+
+///|
+let model : Model = {
+  screen: Top(init_top_model({ time_seconds: 60, category: All, filter: "" })),
   form: { time_seconds: 60, category: All, filter: "" },
 }
 
@@ -101,19 +116,6 @@ fn schedule_tick(ms : Int) -> @cmd.Cmd[Msg] {
 }
 
 ///|
-extern "js" fn install_focus_blur(
-  id : String,
-  on_focus : () -> Unit,
-  on_blur : () -> Unit,
-) =
-  #|(id, onFocus, onBlur) => {
-  #|  const el = document.getElementById(id);
-  #|  if (!el) return;
-  #|  el.addEventListener('focus', onFocus);
-  #|  el.addEventListener('blur', onBlur);
-  #|}
-
-///|
 fn[M] bind_focus_blur_listener(
   id : String,
   focused_msg : M,
@@ -125,6 +127,19 @@ fn[M] bind_focus_blur_listener(
     })
   })
 }
+
+///|
+extern "js" fn install_focus_blur(
+  id : String,
+  on_focus : () -> Unit,
+  on_blur : () -> Unit,
+) =
+  #|(id, onFocus, onBlur) => {
+  #|  const el = document.getElementById(id);
+  #|  if (!el) return;
+  #|  el.addEventListener('focus', onFocus);
+  #|  el.addEventListener('blur', onBlur);
+  #|}
 
 ///|
 extern "js" fn focus_input(id : String) =
@@ -154,13 +169,26 @@ fn update(msg : Msg, model : Model) -> (@cmd.Cmd[Msg], Model) {
     // Top
     (SelectTime(value), Top(_)) =>
       (@cmd.none(), { ..model, form: { ..model.form, time_seconds: value } })
-    (SelectCategory(value), Top(_)) =>
-      (@cmd.none(), { ..model, form: { ..model.form, category: value } })
+    (SelectCategory(value), Top(top_model)) =>
+      (
+        @cmd.none(),
+        {
+          form: { ..model.form, category: value },
+          screen: Top({
+            ..top_model,
+            filtered_words: init_filtered_words(value),
+          }),
+        },
+      )
     (UpdateFilter(value), Top(_)) =>
       (@cmd.none(), { ..model, form: { ..model.form, filter: value } })
-    (StartFromInput(value), Top(_)) =>
+    (StartFromInput(value), Top(top_model)) =>
       if value != "" {
-        let (cmd, typing_model) = start_session(model.form, value)
+        let (cmd, typing_model) = start_session(
+          model.form,
+          top_model.filtered_words,
+          value,
+        )
         (cmd, { ..model, screen: Typing(typing_model) })
       } else {
         (@cmd.none(), model)
@@ -211,17 +239,7 @@ fn update(msg : Msg, model : Model) -> (@cmd.Cmd[Msg], Model) {
     }
     // Result
     (GoTitle, _) =>
-      (
-        @cmd.none(),
-        {
-          ..model,
-          screen: Top({
-            typing_input: "",
-            is_typing_active: false,
-            is_input_ready: true,
-          }),
-        },
-      )
+      (@cmd.none(), { ..model, screen: Top(init_top_model(model.form)) })
     (_, _) => (@cmd.none(), model)
   }
 }
