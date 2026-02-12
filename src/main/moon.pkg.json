@@ -1,9 +1,14 @@
 {
   "is-main": true,
   "import": [
-    { "path": "Yoorkin/rabbit-tea", "alias": "tea" },
+    {
+      "path": "Yoorkin/rabbit-tea",
+      "alias": "tea"
+    },
     "Yoorkin/rabbit-tea/cmd",
     "Yoorkin/rabbit-tea/html",
+    "moonbitlang/core/deque",
+    "moonbitlang/core/random",
     "typinglabs/romaji_typing",
     "typinglabs/datore_well/util"
   ]

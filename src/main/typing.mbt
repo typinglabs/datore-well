@@ -14,7 +14,7 @@ struct TypingSession {
 }
 
 ///|
-fn init_session_from_queue(queue : Array[WordItem]) -> TypingSession? {
+fn init_session_from_queue(queue : @deque.Deque[WordItem]) -> TypingSession? {
   if queue.length() == 0 {
     None
   } else {
@@ -38,7 +38,7 @@ fn advance_to_next_word(model : TypingModel) -> TypingModel {
     completed_display += " "
     completed_roman += " "
   }
-  let queue = advance_word_queue(model.word_queue)
+  let queue = advance_word_queue(model.filtered_words, model.word_queue)
   let typing_session = init_session_from_queue(queue)
   {
     ..model,
@@ -62,7 +62,12 @@ fn apply_typing_input(model : TypingModel, value : String) -> TypingModel {
       if model.awaiting_space {
         if ch == ' ' {
           let next_model = advance_to_next_word(model)
-          { ..next_model, typing_input: "", hits: model.hits + 1 }
+          {
+            ..next_model,
+            typing_input: "",
+            hits: model.hits + 1,
+            is_miss_active: false,
+          }
         } else {
           { ..model, typing_input: "" }
         }
@@ -85,13 +90,16 @@ fn apply_typing_input(model : TypingModel, value : String) -> TypingModel {
                     completed_roman: model.completed_roman +
                     next_state.typed_romaji,
                     hits: model.hits + 1,
+                    is_miss_active: false,
                   }
-                WrongKey => { ..model, miss: model.miss + 1 }
+                WrongKey =>
+                  { ..model, miss: model.miss + 1, is_miss_active: true }
                 CorrectKey =>
                   {
                     ..model,
                     typing_session: Some({ ..session, kanji_state: next_state }),
                     hits: model.hits + 1,
+                    is_miss_active: false,
                   }
               }
             } catch {
@@ -106,15 +114,18 @@ fn apply_typing_input(model : TypingModel, value : String) -> TypingModel {
 ///|
 fn start_session(
   form : Form,
+  filtered_words : Array[WordItem],
+  initial_queue : @deque.Deque[WordItem],
   first_key : String,
 ) -> (@cmd.Cmd[Msg], TypingModel) {
-  let queue = build_word_queue(10)
+  let queue = initial_queue
   let typing_session = init_session_from_queue(queue)
   let timer = start_timer(create_timer(form.time_seconds * 1000))
   let model : TypingModel = {
     timer,
     typing_input: "",
     is_typing_active: true,
+    filtered_words,
     word_queue: queue,
     typing_session,
     awaiting_space: false,
@@ -122,6 +133,7 @@ fn start_session(
     completed_roman: "",
     hits: 0,
     miss: 0,
+    is_miss_active: false,
   }
   let model = apply_typing_input(model, first_key)
   (schedule_tick(1000), model)

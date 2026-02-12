@@ -3,12 +3,76 @@ struct WordItem {
   annotated : String
   display : String
   roman : String
+  kana : String
+  kind : @util.WordKind
 }
 
 ///|
-fn init_datore_items() -> Array[WordItem] {
+let queue_rng : @random.Rand = @random.Rand::new()
+
+///|
+fn is_hiragana(ch : Char) -> Bool {
+  (ch >= 'ぁ' && ch <= 'ゖ') || ch == 'ー'
+}
+
+///|
+fn is_katakana(ch : Char) -> Bool {
+  ch >= 'ァ' && ch <= 'ヶ'
+}
+
+///|
+fn katakana_to_hiragana(ch : Char) -> Char {
+  if is_katakana(ch) {
+    (ch.to_int() - 0x60).unsafe_to_char()
+  } else {
+    ch
+  }
+}
+
+///|
+fn build_kana_from_annotated(annotated : String) -> String {
+  let chars : Array[Char] = []
+  for ch in annotated.iter() {
+    chars.push(ch)
+  }
+  let mut i = 0
+  let mut kana = ""
+  while i < chars.length() {
+    let ch = chars[i]
+    if ch == '{' {
+      i += 1
+      continue
+    }
+    if ch == '}' {
+      i += 1
+      continue
+    }
+    if i + 1 < chars.length() && chars[i + 1] == '{' {
+      let mut j = i + 2
+      let mut reading = ""
+      while j < chars.length() && chars[j] != '}' {
+        reading += chars[j].to_string()
+        j += 1
+      }
+      kana += reading
+      i = j + 1
+      continue
+    }
+    if is_hiragana(ch) {
+      kana += ch.to_string()
+    } else if is_katakana(ch) {
+      kana += katakana_to_hiragana(ch).to_string()
+    }
+    i += 1
+  }
+  kana
+}
+
+///|
+fn init_all_items() -> Array[WordItem] {
   let items : Array[WordItem] = []
-  for word in @util.datore_words() {
+  let words = @util.datore_words()
+  for word in words {
     let result = try {
       let (kanji_state, _apply_key) = @romaji_typing.create_kanji_engine(
         word.text,
@@ -17,6 +81,8 @@ fn init_datore_items() -> Array[WordItem] {
         annotated: word.text,
         display: kanji_state.display,
         roman: kanji_state.remaining_romaji,
+        kana: build_kana_from_annotated(word.text),
+        kind: word.kind,
       })
     } catch {
       _ => None
@@ -30,49 +96,51 @@ fn init_datore_items() -> Array[WordItem] {
 }
 
 ///|
-let datore_items : Array[WordItem] = init_datore_items()
+let all_items : Array[WordItem] = init_all_items()
 
 ///|
-fn build_word_queue(size : Int) -> Array[WordItem] {
-  let words = datore_items
+fn filter_words(category : Category, filter : String) -> Array[WordItem] {
+  all_items.filter(word => {
+    let allowed = match (category, word.kind) {
+      (All, _) => true
+      (Kanji, @util.Kanji) => true
+      (Katakana, @util.Katakana) => true
+      (Hiragana, @util.Hiragana) => true
+      (_, _) => false
+    }
+    allowed && (filter == "" || word.kana.contains(filter))
+  })
+}
+
+///|
+fn build_word_queue(
+  words : Array[WordItem],
+  size : Int,
+) -> @deque.Deque[WordItem] {
   if words.length() == 0 {
-    abort("datore_words is empty")
+    return @deque.new()
   }
-  let queue : Array[WordItem] = []
-  let mut index = 0
+  let queue : @deque.Deque[WordItem] = @deque.new()
   for _i = 0; _i < size; _i = _i + 1 {
-    queue.push(words[index])
-    index = (index + 1) % words.length()
+    let next_index = queue_rng.int(limit=words.length())
+    queue.push_back(words[next_index])
   }
   queue
 }
 
 ///|
-fn advance_word_queue(queue : Array[WordItem]) -> Array[WordItem] {
-  let words = datore_items
+fn advance_word_queue(
+  words : Array[WordItem],
+  queue : @deque.Deque[WordItem],
+) -> @deque.Deque[WordItem] {
+  if words.length() == 0 {
+    return @deque.new()
+  }
   if queue.length() == 0 {
-    return build_word_queue(10)
+    return build_word_queue(words, 10)
   }
-  let next_queue = queue[1:queue.length()].to_array()
-  let last_word = queue[queue.length() - 1]
-  let next_index = match find_word_index(words, last_word) {
-    None => 0
-    Some(index) => (index + 1) % words.length()
-  }
-  let word = words[next_index]
-  next_queue.push(word)
-  next_queue
-}
-
-///|
-fn find_word_index(words : Array[WordItem], target : WordItem) -> Int? {
-  for i = 0; i < words.length(); i = i + 1 {
-    let word = words[i]
-    if word.annotated == target.annotated &&
-      word.display == target.display &&
-      word.roman == target.roman {
-      return Some(i)
-    }
-  }
-  None
+  queue.pop_front() |> ignore
+  let next_index = queue_rng.int(limit=words.length())
+  queue.push_back(words[next_index])
+  queue
 }

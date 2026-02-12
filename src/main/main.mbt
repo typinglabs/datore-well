@@ -8,32 +8,26 @@ enum Category {
 
 ///|
 struct TopModel {
-  // タイピング
   typing_input : String
-  // フラグ
-  is_typing_active : Bool
   is_input_ready : Bool
+  filtered_words : Array[WordItem]
+  preview_queue : @deque.Deque[WordItem]
 }
 
 ///|
 struct TypingModel {
-  // タイマー
   timer : Timer
-  // タイピング
   typing_input : String
-  // フラグ
   is_typing_active : Bool
-  // ワード
-  word_queue : Array[WordItem]
-  // タイピング情報
+  filtered_words : Array[WordItem]
+  word_queue : @deque.Deque[WordItem]
   typing_session : TypingSession?
   awaiting_space : Bool
-  // 入力済み
   completed_display : String
   completed_roman : String
-  // 打鍵数とミス数
   hits : Int
   miss : Int
+  is_miss_active : Bool
 }
 
 ///|
@@ -66,12 +60,15 @@ struct Model {
 }
 
 ///|
+fn init_top_model(form : Form) -> TopModel {
+  let filtered_words = filter_words(form.category, form.filter)
+  let preview_queue = build_word_queue(filtered_words, 10)
+  { typing_input: "", is_input_ready: true, filtered_words, preview_queue }
+}
+
+///|
 let model : Model = {
-  screen: Top({
-    typing_input: "",
-    is_typing_active: false,
-    is_input_ready: true,
-  }),
+  screen: Top(init_top_model({ time_seconds: 60, category: All, filter: "" })),
   form: { time_seconds: 60, category: All, filter: "" },
 }
 
@@ -109,22 +106,10 @@ extern "js" fn install_focus_blur(
   #|(id, onFocus, onBlur) => {
   #|  const el = document.getElementById(id);
   #|  if (!el) return;
-  #|  el.addEventListener('focus', onFocus);
-  #|  el.addEventListener('blur', onBlur);
+  #|  const defer = (fn) => setTimeout(fn, 0);
+  #|  el.addEventListener('focus', () => defer(onFocus));
+  #|  el.addEventListener('blur', () => defer(onBlur));
   #|}
-
-///|
-fn[M] bind_focus_blur_listener(
-  id : String,
-  focused_msg : M,
-  blurred_msg : M,
-) -> @cmd.Cmd[M] {
-  @cmd.Cmd(fn(events) {
-    install_focus_blur(id, fn() { events.trigger_update(focused_msg) }, fn() {
-      events.trigger_update(blurred_msg)
-    })
-  })
-}
 
 ///|
 extern "js" fn focus_input(id : String) =
@@ -136,45 +121,88 @@ extern "js" fn focus_input(id : String) =
   #|}
 
 ///|
-fn focus_typing_input() -> @cmd.Cmd[Msg] {
-  @cmd.Cmd(fn(_) { focus_input("typing-input") })
+fn focus_input_cmd() -> @cmd.Cmd[Msg] {
+  @cmd.batch([
+    @cmd.Cmd(fn(events) {
+      install_focus_blur(
+        "typing-input",
+        fn() { events.trigger_update(Focused) },
+        fn() { events.trigger_update(Blurred) },
+      )
+    }),
+    @cmd.Cmd(fn(_) { focus_input("typing-input") }),
+  ])
 }
 
 ///|
 fn update(msg : Msg, model : Model) -> (@cmd.Cmd[Msg], Model) {
   match (msg, model.screen) {
-    (Init, _) =>
-      (
-        @cmd.batch([
-          bind_focus_blur_listener("typing-input", Focused, Blurred),
-          focus_typing_input(),
-        ]),
-        model,
-      )
+    (Init, _) => (focus_input_cmd(), model)
     // Top
     (SelectTime(value), Top(_)) =>
       (@cmd.none(), { ..model, form: { ..model.form, time_seconds: value } })
-    (SelectCategory(value), Top(_)) =>
-      (@cmd.none(), { ..model, form: { ..model.form, category: value } })
-    (UpdateFilter(value), Top(_)) =>
-      (@cmd.none(), { ..model, form: { ..model.form, filter: value } })
-    (StartFromInput(value), Top(_)) =>
-      if value != "" {
-        let (cmd, typing_model) = start_session(model.form, value)
-        (cmd, { ..model, screen: Typing(typing_model) })
+    (SelectCategory(value), Top(top_model)) =>
+      if value == model.form.category {
+        (@cmd.none(), model)
+      } else {
+        let filtered_words = filter_words(value, model.form.filter)
+        let preview_queue = build_word_queue(filtered_words, 10)
+        (
+          @cmd.none(),
+          {
+            form: { ..model.form, category: value },
+            screen: Top({ ..top_model, filtered_words, preview_queue }),
+          },
+        )
+      }
+    // }
+    (UpdateFilter(value), Top(top_model)) =>
+      if value == model.form.filter {
+        (@cmd.none(), model)
+      } else {
+        let filtered_words = filter_words(model.form.category, value)
+        let preview_queue = build_word_queue(filtered_words, 10)
+        (
+          @cmd.none(),
+          {
+            form: { ..model.form, filter: value },
+            screen: Top({ ..top_model, filtered_words, preview_queue }),
+          },
+        )
+      }
+    (StartFromInput(value), Top(top_model)) =>
+      if value != "" && top_model.filtered_words.length() > 0 {
+        let (cmd, typing_model) = start_session(
+          model.form,
+          top_model.filtered_words,
+          top_model.preview_queue,
+          value,
+        )
+        (
+          @cmd.batch([cmd, focus_input_cmd()]),
+          { ..model, screen: Typing(typing_model) },
+        )
       } else {
         (@cmd.none(), model)
       }
     (Focused, Top(top_model)) =>
-      (
-        @cmd.none(),
-        { ..model, screen: Top({ ..top_model, is_input_ready: true }) },
-      )
+      if top_model.is_input_ready {
+        (@cmd.none(), model)
+      } else {
+        (
+          @cmd.none(),
+          { ..model, screen: Top({ ..top_model, is_input_ready: true }) },
+        )
+      }
     (Blurred, Top(top_model)) =>
-      (
-        @cmd.none(),
-        { ..model, screen: Top({ ..top_model, is_input_ready: false }) },
-      )
+      if !top_model.is_input_ready {
+        (@cmd.none(), model)
+      } else {
+        (
+          @cmd.none(),
+          { ..model, screen: Top({ ..top_model, is_input_ready: false }) },
+        )
+      }
     // Typing
     (UpdateTyping(value), Typing(typing_model)) =>
       (
@@ -211,17 +239,7 @@ fn update(msg : Msg, model : Model) -> (@cmd.Cmd[Msg], Model) {
     }
     // Result
     (GoTitle, _) =>
-      (
-        @cmd.none(),
-        {
-          ..model,
-          screen: Top({
-            typing_input: "",
-            is_typing_active: false,
-            is_input_ready: true,
-          }),
-        },
-      )
+      (focus_input_cmd(), { ..model, screen: Top(init_top_model(model.form)) })
     (_, _) => (@cmd.none(), model)
   }
 }

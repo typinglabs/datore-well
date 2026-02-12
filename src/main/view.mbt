@@ -16,6 +16,14 @@ fn app_header(extra : @html.Html[Msg]?) -> @html.Html[Msg] {
 }
 
 ///|
+fn split_first_char(value : String) -> (String, String) {
+  match value[:] {
+    [] => ("", "")
+    [first, .. rest] => (first.to_string(), rest.to_string())
+  }
+}
+
+///|
 fn word_display(
   typing_input : String,
   input_msg : (String) -> Msg,
@@ -25,7 +33,10 @@ fn word_display(
   kana_right : String,
   roman_left : String,
   roman_right : String,
+  is_miss_active : Bool,
 ) -> @html.Html[Msg] {
+  let (next_kana_char, kana_right_rest) = split_first_char(kana_right)
+  let (next_roman_char, roman_right_rest) = split_first_char(roman_right)
   div(
     class="pointer-events-none fixed left-1/2 top-1/2 flex w-full max-w-5xl -translate-x-1/2 -translate-y-1/2 -mt-6 items-center justify-center px-6",
     [
@@ -50,7 +61,17 @@ fn word_display(
                   span(class=cursor_class + " shrink-0", []),
                   span(
                     class="block min-w-0 flex-1 overflow-hidden whitespace-pre text-left text-ink/50 text-clip",
-                    [text(kana_right)],
+                    [
+                      span(
+                        class=if is_miss_active {
+                          "text-red-500"
+                        } else {
+                          ""
+                        },
+                        [text(next_kana_char)],
+                      ),
+                      text(kana_right_rest),
+                    ],
                   ),
                 ],
               ),
@@ -66,7 +87,17 @@ fn word_display(
                   span(class=cursor_class + " shrink-0", []),
                   span(
                     class="block min-w-0 flex-1 overflow-hidden whitespace-pre text-left text-ink/50 text-clip",
-                    [text(roman_right)],
+                    [
+                      span(
+                        class=if is_miss_active {
+                          "text-red-500"
+                        } else {
+                          ""
+                        },
+                        [text(next_roman_char)],
+                      ),
+                      text(roman_right_rest),
+                    ],
                   ),
                 ],
               ),
