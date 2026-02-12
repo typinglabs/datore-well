@@ -27,6 +27,8 @@
 - Avoid arbitrary values in Tailwind classes when possible; prefer theme tokens and standard scales.
 - Indentation: 2 spaces for Markdown and configuration files unless a tool dictates otherwise.
 - Naming: use clear, descriptive, lowercase filenames (e.g., `todo_cli.mbt`, `word_filter.mbt`).
+- 1度しか呼ばないような細かい関数は、関数にしない。可視性の問題で変更、削除が難しくなるため。
+- 使用する値や関数は、使用するより前に定義する。
 
 ## Testing Guidelines
 - Use Moonbit `test "name" { ... }` blocks.
