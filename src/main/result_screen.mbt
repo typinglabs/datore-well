@@ -1,5 +1,5 @@
 ///|
-fn result_screen(model : Model) -> @html.Html[Msg] {
+fn result_screen(model : ResultModel) -> @html.Html[Msg] {
   let score = calc_score_from(model.hits, model.miss, model.timer.elapsed_ms)
   div(class="mx-auto flex w-full max-w-5xl flex-col gap-8", [
     section(class="pt-2", [

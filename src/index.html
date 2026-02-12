@@ -6,26 +6,6 @@
     <title>打トレ単語練習</title>
     <link rel="stylesheet" type="text/css" href="/style.css" />
     <script src="/main.js" type="module"></script>
-    <script>
-      const focusTypingInput = () => {
-        const target = document.getElementById("typing-input");
-        if (target && typeof target.focus === "function") {
-          target.focus();
-        }
-      };
-      const observeAppUpdates = () => {
-        const appRoot = document.getElementById("app");
-        if (!appRoot || !("MutationObserver" in window)) return;
-        const observer = new MutationObserver(focusTypingInput);
-        observer.observe(appRoot, { childList: true, subtree: true });
-      };
-      window.addEventListener("DOMContentLoaded", () => {
-        observeAppUpdates();
-        focusTypingInput();
-      });
-      window.addEventListener("load", focusTypingInput);
-      document.addEventListener("click", focusTypingInput);
-    </script>
   </head>
   <body
     class="min-h-screen bg-canvas text-ink antialiased font-sans"

@@ -10,16 +10,16 @@ fn format_timer(timer : Timer) -> String {
 
 ///|
 test "format_timer" {
-  let timer = @typing.create_timer(60 * 1000)
+  let timer = @util.create_timer(60 * 1000)
   assert_eq(format_timer(timer), "01:00")
-  let timer = @typing.create_timer(55 * 1000)
+  let timer = @util.create_timer(55 * 1000)
   assert_eq(format_timer(timer), "00:55")
-  let timer = @typing.create_timer(8 * 1000)
+  let timer = @util.create_timer(8 * 1000)
   assert_eq(format_timer(timer), "00:08")
 }
 
 ///|
-fn typing_state(model : Model) -> (String, String, String, String) {
+fn typing_state(model : TypingModel) -> (String, String, String, String) {
   // SessionがNoneになるのは、主にワードを打ち終わっている場合
   let (typed_display, remaining_display, typed_roman, remaining_roman) = match
     model.typing_session {
@@ -46,12 +46,12 @@ fn typing_state(model : Model) -> (String, String, String, String) {
 }
 
 ///|
-fn playing_screen(model : Model) -> @html.Html[Msg] {
+fn playing_screen(model : TypingModel) -> @html.Html[Msg] {
   let (kana_left, kana_right, roman_left, roman_right) = typing_state(model)
   let cursor_class = if model.is_typing_active {
-    "h-6 w-0.5 self-center justify-self-center bg-ink"
+    "h-7 w-0.5 self-center justify-self-center bg-ink"
   } else {
-    "h-6 w-0.5 self-center justify-self-center bg-ink opacity-0"
+    "h-7 w-0.5 self-center justify-self-center bg-ink opacity-0"
   }
   let zone_class = if model.is_typing_active {
     "relative w-full min-h-11 cursor-text overflow-hidden border-0 py-3 outline-none"

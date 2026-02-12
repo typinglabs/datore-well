@@ -2,10 +2,10 @@
 using @html {div, text, section, button, p, span, label, input}
 
 ///|
-using @typing {type Timer}
+using @util {type Timer}
 
 ///|
-using @typing {
+using @util {
   create_timer,
   start_timer,
   tick_timer,
