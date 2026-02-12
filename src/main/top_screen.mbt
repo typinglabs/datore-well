@@ -26,13 +26,11 @@ fn category_button(
 
 ///|
 fn top_preview_state(
-  words : Array[WordItem],
+  queue : @deque.Deque[WordItem],
 ) -> (String, String, String, String) {
-  // ここでワード生成するとダメだと思う
-  if words.length() == 0 {
+  if queue.length() == 0 {
     return ("", "", "", "")
   }
-  let queue = build_word_queue(words, 10)
   let queue_array = queue.to_array()
   let kana_right = queue_array.map(item => item.display).join(" ")
   let roman_right = queue_array.map(item => item.roman).join(" ")
@@ -42,12 +40,12 @@ fn top_preview_state(
 ///|
 fn top_screen(model : TopModel, form : Form) -> @html.Html[Msg] {
   let (kana_left, kana_right, roman_left, roman_right) = top_preview_state(
-    model.filtered_words,
+    model.preview_queue,
   )
   let cursor_class = if model.is_input_ready {
-    "h-6 w-0.5 self-center justify-self-center bg-ink"
+    "h-7 w-0.5 self-center justify-self-center bg-ink"
   } else {
-    "h-6 w-0.5 self-center justify-self-center bg-ink opacity-0"
+    "h-7 w-0.5 self-center justify-self-center bg-ink opacity-0"
   }
   let empty_message = if model.filtered_words.length() == 0 {
     [

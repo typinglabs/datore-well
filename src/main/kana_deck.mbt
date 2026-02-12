@@ -113,23 +113,6 @@ fn filter_words(category : Category, filter : String) -> Array[WordItem] {
 }
 
 ///|
-fn shuffle_word_items(words : Array[WordItem], seed : Int) -> Array[WordItem] {
-  let result = words.copy()
-  let rng = @random.Rand::chacha8(
-    seed=Bytes::makei(32, i => ((seed + i * 31) & 0xff).to_byte()),
-  )
-  if result.length() <= 1 {
-    return result
-  }
-  rng.shuffle(result.length(), (i, j) => {
-    let temp = result[i]
-    result[i] = result[j]
-    result[j] = temp
-  })
-  result
-}
-
-///|
 fn build_word_queue(
   words : Array[WordItem],
   size : Int,
@@ -138,10 +121,9 @@ fn build_word_queue(
     return @deque.new()
   }
   let queue : @deque.Deque[WordItem] = @deque.new()
-  let mut index = 0
   for _i = 0; _i < size; _i = _i + 1 {
-    queue.push_back(words[index])
-    index = (index + 1) % words.length()
+    let next_index = queue_rng.int(limit=words.length())
+    queue.push_back(words[next_index])
   }
   queue
 }
@@ -157,9 +139,8 @@ fn advance_word_queue(
   if queue.length() == 0 {
     return build_word_queue(words, 10)
   }
-  let next_queue = queue.copy()
-  ignore(next_queue.pop_front())
+  queue.pop_front() |> ignore
   let next_index = queue_rng.int(limit=words.length())
-  next_queue.push_back(words[next_index])
-  next_queue
+  queue.push_back(words[next_index])
+  queue
 }

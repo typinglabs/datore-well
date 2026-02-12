@@ -11,6 +11,7 @@ struct TopModel {
   typing_input : String
   is_input_ready : Bool
   filtered_words : Array[WordItem]
+  preview_queue : @deque.Deque[WordItem]
 }
 
 ///|
@@ -61,11 +62,8 @@ struct Model {
 ///|
 fn init_top_model(form : Form) -> TopModel {
   let filtered_words = filter_words(form.category, form.filter)
-  {
-    typing_input: "",
-    is_input_ready: true,
-    filtered_words: filtered_words |> shuffle_word_items(1),
-  }
+  let preview_queue = build_word_queue(filtered_words, 10)
+  { typing_input: "", is_input_ready: true, filtered_words, preview_queue }
 }
 
 ///|
@@ -144,34 +142,40 @@ fn update(msg : Msg, model : Model) -> (@cmd.Cmd[Msg], Model) {
     (SelectTime(value), Top(_)) =>
       (@cmd.none(), { ..model, form: { ..model.form, time_seconds: value } })
     (SelectCategory(value), Top(top_model)) =>
-      (
-        @cmd.none(),
-        {
-          form: { ..model.form, category: value },
-          screen: Top({
-            ..top_model,
-            filtered_words: filter_words(value, model.form.filter)
-            |> shuffle_word_items(1),
-          }),
-        },
-      )
+      if value == model.form.category {
+        (@cmd.none(), model)
+      } else {
+        let filtered_words = filter_words(value, model.form.filter)
+        let preview_queue = build_word_queue(filtered_words, 10)
+        (
+          @cmd.none(),
+          {
+            form: { ..model.form, category: value },
+            screen: Top({ ..top_model, filtered_words, preview_queue }),
+          },
+        )
+      }
+    // }
     (UpdateFilter(value), Top(top_model)) =>
-      (
-        @cmd.none(),
-        {
-          form: { ..model.form, filter: value },
-          screen: Top({
-            ..top_model,
-            filtered_words: filter_words(model.form.category, value)
-            |> shuffle_word_items(1),
-          }),
-        },
-      )
+      if value == model.form.filter {
+        (@cmd.none(), model)
+      } else {
+        let filtered_words = filter_words(model.form.category, value)
+        let preview_queue = build_word_queue(filtered_words, 10)
+        (
+          @cmd.none(),
+          {
+            form: { ..model.form, filter: value },
+            screen: Top({ ..top_model, filtered_words, preview_queue }),
+          },
+        )
+      }
     (StartFromInput(value), Top(top_model)) =>
       if value != "" && top_model.filtered_words.length() > 0 {
         let (cmd, typing_model) = start_session(
           model.form,
           top_model.filtered_words,
+          top_model.preview_queue,
           value,
         )
         (
@@ -182,15 +186,23 @@ fn update(msg : Msg, model : Model) -> (@cmd.Cmd[Msg], Model) {
         (@cmd.none(), model)
       }
     (Focused, Top(top_model)) =>
-      (
-        @cmd.none(),
-        { ..model, screen: Top({ ..top_model, is_input_ready: true }) },
-      )
+      if top_model.is_input_ready {
+        (@cmd.none(), model)
+      } else {
+        (
+          @cmd.none(),
+          { ..model, screen: Top({ ..top_model, is_input_ready: true }) },
+        )
+      }
     (Blurred, Top(top_model)) =>
-      (
-        @cmd.none(),
-        { ..model, screen: Top({ ..top_model, is_input_ready: false }) },
-      )
+      if !top_model.is_input_ready {
+        (@cmd.none(), model)
+      } else {
+        (
+          @cmd.none(),
+          { ..model, screen: Top({ ..top_model, is_input_ready: false }) },
+        )
+      }
     // Typing
     (UpdateTyping(value), Typing(typing_model)) =>
       (

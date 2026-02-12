@@ -115,9 +115,10 @@ fn apply_typing_input(model : TypingModel, value : String) -> TypingModel {
 fn start_session(
   form : Form,
   filtered_words : Array[WordItem],
+  initial_queue : @deque.Deque[WordItem],
   first_key : String,
 ) -> (@cmd.Cmd[Msg], TypingModel) {
-  let queue = build_word_queue(filtered_words, 10)
+  let queue = initial_queue
   let typing_session = init_session_from_queue(queue)
   let timer = start_timer(create_timer(form.time_seconds * 1000))
   let model : TypingModel = {
