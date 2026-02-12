@@ -62,7 +62,12 @@ fn apply_typing_input(model : TypingModel, value : String) -> TypingModel {
       if model.awaiting_space {
         if ch == ' ' {
           let next_model = advance_to_next_word(model)
-          { ..next_model, typing_input: "", hits: model.hits + 1 }
+          {
+            ..next_model,
+            typing_input: "",
+            hits: model.hits + 1,
+            is_miss_active: false,
+          }
         } else {
           { ..model, typing_input: "" }
         }
@@ -85,13 +90,16 @@ fn apply_typing_input(model : TypingModel, value : String) -> TypingModel {
                     completed_roman: model.completed_roman +
                     next_state.typed_romaji,
                     hits: model.hits + 1,
+                    is_miss_active: false,
                   }
-                WrongKey => { ..model, miss: model.miss + 1 }
+                WrongKey =>
+                  { ..model, miss: model.miss + 1, is_miss_active: true }
                 CorrectKey =>
                   {
                     ..model,
                     typing_session: Some({ ..session, kanji_state: next_state }),
                     hits: model.hits + 1,
+                    is_miss_active: false,
                   }
               }
             } catch {
@@ -124,6 +132,7 @@ fn start_session(
     completed_roman: "",
     hits: 0,
     miss: 0,
+    is_miss_active: false,
   }
   let model = apply_typing_input(model, first_key)
   (schedule_tick(1000), model)

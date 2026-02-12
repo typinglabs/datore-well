@@ -26,6 +26,7 @@ struct TypingModel {
   completed_roman : String
   hits : Int
   miss : Int
+  is_miss_active : Bool
 }
 
 ///|

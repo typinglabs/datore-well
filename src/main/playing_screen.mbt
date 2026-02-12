@@ -86,6 +86,7 @@ fn playing_screen(model : TypingModel) -> @html.Html[Msg] {
           kana_right,
           roman_left,
           roman_right,
+          model.is_miss_active,
         ),
       ]),
     ]),

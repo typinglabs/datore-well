@@ -74,6 +74,7 @@ fn top_screen(model : TopModel, form : Form) -> @html.Html[Msg] {
         kana_right,
         roman_left,
         roman_right,
+        false,
       ),
       ..empty_message,
     ],
