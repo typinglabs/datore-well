@@ -49,9 +49,9 @@ fn typing_state(model : TypingModel) -> (String, String, String, String) {
 fn playing_screen(model : TypingModel) -> @html.Html[Msg] {
   let (kana_left, kana_right, roman_left, roman_right) = typing_state(model)
   let cursor_class = if model.is_typing_active {
-    "h-6 w-0.5 self-center justify-self-center bg-ink"
+    "h-7 w-0.5 self-center justify-self-center bg-ink"
   } else {
-    "h-6 w-0.5 self-center justify-self-center bg-ink opacity-0"
+    "h-7 w-0.5 self-center justify-self-center bg-ink opacity-0"
   }
   let zone_class = if model.is_typing_active {
     "relative w-full min-h-11 cursor-text overflow-hidden border-0 py-3 outline-none"

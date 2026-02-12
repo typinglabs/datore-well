@@ -57,7 +57,7 @@ fn word_display(
             ]),
             div(class="w-full min-w-0", [
               div(
-                class="flex w-full min-w-0 items-baseline whitespace-pre font-mono text-xl",
+                class="flex w-full min-w-0 items-baseline whitespace-pre font-mono text-2xl",
                 [
                   div(
                     class="flex min-w-0 flex-1 justify-end overflow-hidden whitespace-nowrap text-ink",
