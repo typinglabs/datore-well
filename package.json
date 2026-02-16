@@ -7,7 +7,6 @@
   },
   "scripts": {
     "dev": "vite",
-    "prebuild": "mkdir -p target/js/release/build/main && : > target/js/release/build/main/main.js.map",
     "build": "vite build"
   }
 }
