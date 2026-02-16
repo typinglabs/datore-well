@@ -3,3 +3,10 @@
 打鍵トレーナー（高速タイピング）で出題される単語を練習するためのアプリです。
 
 ![プレイ画面](https://i.gyazo.com/78e384d5d7b9500b06b001c00779ef18.png)
+
+## Development
+
+```bash
+bun install
+bun dev
+```
