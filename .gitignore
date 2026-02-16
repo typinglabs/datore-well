@@ -8,6 +8,7 @@ node_modules
 .mooncakes
 _build
 .vite
+target
 
 src/main.js
 src/main.js.map
